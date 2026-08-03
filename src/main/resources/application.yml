@@ -4,9 +4,9 @@ spring:
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-    flyway:
-      enabled: true
-      baseline-on-migrate: true
-    sql:
-      init:
-        mode: never
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  sql:
+    init:
+      mode: never
