@@ -8,6 +8,9 @@ import br.com.ubots.flowpay.repository.TicketRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
+import java.util.regex.Pattern;
+
 @Service
 public class RoutingService {
 
@@ -15,7 +18,7 @@ public class RoutingService {
     private final AgentRepository agentRepository;
     private final QueueRepository queueRepository;
 
-    // Injeção de dependências via construtor (Boas práticas de Sênior)
+    // Injeção de dependências via construtor
     public RoutingService(TicketRepository ticketRepository, AgentRepository agentRepository, QueueRepository queueRepository) {
         this.ticketRepository = ticketRepository;
         this.agentRepository = agentRepository;
@@ -44,7 +47,32 @@ public class RoutingService {
      * Método auxiliar para classificar o assunto.
      */
     private TeamEnum determineTeam(String subject) {
-        // implementar a lógica de palavras-chave aqui
-        return TeamEnum.OTHERS;
+        if (subject == null || subject.isBlank()) {
+            return TeamEnum.OTHERS; // Proteção contra NullPointerException
+        }
+
+        String normalizedSubject = normalizeText(subject);
+
+        if (normalizedSubject.contains("cartao")) {
+            return TeamEnum.CREDIT_CARDS;
+        }
+
+        if (normalizedSubject.contains("emprestimo")) {
+            return TeamEnum.LOANS;
+        }
+
+        return TeamEnum.OTHERS; // Fallback (Se não for nenhum dos acima)
+    }
+
+    private String normalizeText(String text) {
+        // Desmonta os acentos da letra base
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
+
+        // Regex que arranca qualquer acento (marca diacrítica)
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        String textWithoutAccents = pattern.matcher(normalized).replaceAll("");
+
+        // Tudo minúsculo e sem espaços sobrando nas pontas
+        return textWithoutAccents.toLowerCase().trim();
     }
 }
