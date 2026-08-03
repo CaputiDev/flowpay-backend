@@ -46,7 +46,7 @@ public class RoutingService {
     /**
      * Método auxiliar para classificar o assunto.
      */
-    private TeamEnum determineTeam(String subject) {
+    TeamEnum determineTeam(String subject) {
         if (subject == null || subject.isBlank()) {
             return TeamEnum.OTHERS; // Proteção contra NullPointerException
         }
