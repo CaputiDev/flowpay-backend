@@ -1,0 +1,65 @@
+### ===================================================================
+### SUÍTE DE TESTES DE INTEGRAÇÃO - FLOWPAY MVP (TASK 3)
+### ===================================================================
+
+### 1. Happy Path: Atendente Livre (Esperado: HTTP 201 CREATED)
+# Esse teste valida se o motor encontra um atendente da equipe de Cartões (CREDIT_CARDS)
+# e atribui o ticket diretamente a ele.
+POST http://localhost:8080/v1/tickets
+Content-Type: application/json
+
+{
+  "chatRef": "whatsapp_555199999911",
+  "subject": "Preciso de ajuda com limite do meu cartão de crédito"
+}
+
+###
+
+### 2. Teste de Assunto / Regex (Esperado: HTTP 201 CREATED em LOANS)
+# Valida se o roteador identifica a palavra 'empréstimo' e direciona para a equipe correta.
+POST http://localhost:8080/v1/tickets
+Content-Type: application/json
+
+{
+  "chatRef": "telegram_99887766",
+  "subject": "Gostaria de simular uma taxa de empréstimo"
+}
+
+###
+
+### 3. Teste de Transbordo para Fila (Esperado: HTTP 202 ACCEPTED)
+# DICA DE ENGENHARIA: Dispare o teste #1 repetidas vezes (martele o Play).
+# Quando todos os atendentes de CREDIT_CARDS atingirem a capacidade (max_capacity),
+# o motor DEVE colocar o ticket em PENDING na fila.
+POST http://localhost:8080/v1/tickets
+Content-Type: application/json
+
+{
+  "chatRef": "whatsapp_555199999922",
+  "subject": "Dúvida sobre fatura do cartão"
+}
+
+###
+
+### 4. Teste de Fila Lotada / Rejeição (Esperado: HTTP 422 UNPROCESSABLE ENTITY)
+# Continue disparando o POST de Cartões até que a fila também atinja max_capacity.
+# O motor deve barrar e retornar REJECTED.
+POST http://localhost:8080/v1/tickets
+Content-Type: application/json
+
+{
+  "chatRef": "whatsapp_555199999999",
+  "subject": "Preciso de ajuda urgente com cartão"
+}
+
+###
+
+### 5. Bad Request / Validação DTO (Esperado: HTTP 400 BAD REQUEST)
+# Valida se as anotações do Bean Validation (@NotBlank) no seu DTO estão funcionando.
+POST http://localhost:8080/v1/tickets
+Content-Type: application/json
+
+{
+  "chatRef": "",
+  "subject": ""
+}

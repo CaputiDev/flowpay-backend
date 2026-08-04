@@ -9,6 +9,9 @@ import br.com.ubots.flowpay.repository.AgentRepository;
 import br.com.ubots.flowpay.repository.QueueRepository;
 import br.com.ubots.flowpay.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,11 @@ public class RoutingService {
     /**
      * Ponto de entrada para novos chamados no FlowPay.
      */
+    @Retryable(
+            value = { OptimisticLockingFailureException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100)
+    )
     @Transactional
     public Ticket routeNewTicket(String chatRef, String subject) {
 

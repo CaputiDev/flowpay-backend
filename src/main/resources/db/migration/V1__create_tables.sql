@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS agent (
     name VARCHAR(255) NOT NULL,
     team VARCHAR(50) NOT NULL,
     current_load INT DEFAULT 0,
-    version BIGINT DEFAULT 0
+    version BIGINT DEFAULT 0,
+    max_capacity INT NOT NULL DEFAULT 3
     );
 
 -- Ticket Table (Solicitações/Chamados)
