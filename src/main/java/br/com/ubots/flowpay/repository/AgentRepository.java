@@ -17,5 +17,5 @@ public interface AgentRepository extends CrudRepository<Agent, UUID> {
      * priorizando quem tem a MENOR carga de trabalho atual (distribuição equilibrada).
      */
     @Query("SELECT * FROM agent WHERE team = :team AND current_load < 3 ORDER BY current_load ASC LIMIT 1")
-    Optional<Agent> findAvailableAgentByTeam(String team);
+    Optional<Agent> findAvailableAgentByTeam(TeamEnum team);
 }

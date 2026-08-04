@@ -1,29 +1,29 @@
 package br.com.ubots.flowpay.service;
 
+import br.com.ubots.flowpay.model.Agent;
+import br.com.ubots.flowpay.model.Queue;
 import br.com.ubots.flowpay.model.Ticket;
+import br.com.ubots.flowpay.model.enums.StatusEnum;
 import br.com.ubots.flowpay.model.enums.TeamEnum;
 import br.com.ubots.flowpay.repository.AgentRepository;
 import br.com.ubots.flowpay.repository.QueueRepository;
 import br.com.ubots.flowpay.repository.TicketRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class RoutingService {
 
     private final TicketRepository ticketRepository;
     private final AgentRepository agentRepository;
     private final QueueRepository queueRepository;
-
-    // Injeção de dependências via construtor
-    public RoutingService(TicketRepository ticketRepository, AgentRepository agentRepository, QueueRepository queueRepository) {
-        this.ticketRepository = ticketRepository;
-        this.agentRepository = agentRepository;
-        this.queueRepository = queueRepository;
-    }
 
     /**
      * Ponto de entrada para novos chamados no FlowPay.
@@ -31,16 +31,51 @@ public class RoutingService {
     @Transactional
     public Ticket routeNewTicket(String chatRef, String subject) {
 
-        // TODO Passo 1: Descobrir o TeamEnum correto baseado na string 'subject'
+        // Classificação do assunto
         TeamEnum targetTeam = determineTeam(subject);
 
-        // TODO Passo 2: Buscar a Fila (Queue) no banco usando o targetTeam
+        // Busca da Fila correspondente
+        Queue queue = queueRepository.findByTeam(targetTeam)
+                .orElseThrow(() -> new RuntimeException("Queue not  for team: " + targetTeam));
 
-        // TODO Passo 3: Criar a entidade Ticket e popular os dados iniciais
+        // Busca atendente disponivel
 
-        // TODO Passo 4: Aplicar a regra de distribuição (Tem atendente? A fila tá cheia?)
+        Optional<Agent> availableAgent = agentRepository.findAvailableAgentByTeam(targetTeam);
 
-        return null; // Temporário até implementarmos
+        if (availableAgent.isPresent()) {
+            return assignTicketToAgent(chatRef, subject, queue, availableAgent.get());
+        }
+
+        // Manda atendimento pra fila
+        return sendTicketToQueue(chatRef, subject, queue);
+    }
+
+    /**
+     * Atribui o ticket.
+     */
+    private Ticket assignTicketToAgent(String chatRef, String subject, Queue queue, Agent agent) {
+
+        agent.incrementLoad();
+        agentRepository.save(agent);
+
+        Ticket ticket = Ticket.createAssigned(chatRef, subject, queue.getId(), agent.getId());
+
+        return ticketRepository.save(ticket);
+    }
+
+    /**
+     * Enfileira ou rejeita o ticket.
+     */
+    private Ticket sendTicketToQueue(String chatRef, String subject, Queue queue) {
+        int pendingCount = ticketRepository.countByQueueIdAndStatus(queue.getId(), StatusEnum.PENDING);
+
+        StatusEnum finalStatus = (pendingCount >= queue.getMaxCapacity())
+                ? StatusEnum.REJECTED
+                : StatusEnum.PENDING;
+
+        Ticket ticket = Ticket.createForQueue(chatRef, subject, queue.getId(), finalStatus);
+
+        return ticketRepository.save(ticket);
     }
 
     /**
