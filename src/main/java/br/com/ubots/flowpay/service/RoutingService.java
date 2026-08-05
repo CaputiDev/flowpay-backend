@@ -86,14 +86,18 @@ public class RoutingService {
      * Enfileira ou rejeita o ticket.
      */
     private Ticket sendTicketToQueue(String chatRef, String subject, Queue queue) {
-        int pendingCount = ticketRepository.countByQueueIdAndStatus(queue.getId(), StatusEnum.PENDING);
+        long pendingCount = ticketRepository.countByQueueIdAndStatus(queue.getId(), StatusEnum.PENDING);
 
-        StatusEnum finalStatus = (pendingCount >= queue.getMaxCapacity())
-                ? StatusEnum.REJECTED
-                : StatusEnum.PENDING;
+        // Bateu no teto? Aborta a missão e devolve 422!
+        if (pendingCount >= queue.getMaxCapacity()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    "The queue is currently at maximum capacity. Ticket rejected."
+            );
+        }
 
-        Ticket ticket = Ticket.createForQueue(chatRef, subject, queue.getId(), finalStatus);
-
+        // Se chegou aqui, tem vaga. Salva como PENDING!
+        Ticket ticket = Ticket.createForQueue(chatRef, subject, queue.getId(), StatusEnum.PENDING);
         return ticketRepository.save(ticket);
     }
 
