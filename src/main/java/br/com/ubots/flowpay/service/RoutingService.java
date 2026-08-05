@@ -10,12 +10,15 @@ import br.com.ubots.flowpay.repository.QueueRepository;
 import br.com.ubots.flowpay.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -39,16 +42,23 @@ public class RoutingService {
     @Transactional
     public Ticket routeNewTicket(String chatRef, String subject) {
 
+        // Trava de Idempotência
+        if (ticketRepository.existsByChatRefAndStatusIn(chatRef, List.of(StatusEnum.IN_PROGRESS, StatusEnum.PENDING))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An active ticket already exists for this chat reference");
+        }
+
         // Classificação do assunto
         TeamEnum targetTeam = determineTeam(subject);
 
         // Busca da Fila correspondente
         Queue queue = queueRepository.findByTeam(targetTeam)
-                .orElseThrow(() -> new RuntimeException("Queue not  for team: " + targetTeam));
+                .orElseThrow(() -> new RuntimeException("Queue not found for team: " + targetTeam));
 
         // Busca atendente disponivel
 
         Optional<Agent> availableAgent = agentRepository.findAvailableAgentByTeam(targetTeam);
+
+
 
         if (availableAgent.isPresent()) {
             return assignTicketToAgent(chatRef, subject, queue, availableAgent.get());
@@ -75,14 +85,18 @@ public class RoutingService {
      * Enfileira ou rejeita o ticket.
      */
     private Ticket sendTicketToQueue(String chatRef, String subject, Queue queue) {
-        int pendingCount = ticketRepository.countByQueueIdAndStatus(queue.getId(), StatusEnum.PENDING);
+        long pendingCount = ticketRepository.countByQueueIdAndStatus(queue.getId(), StatusEnum.PENDING);
 
-        StatusEnum finalStatus = (pendingCount >= queue.getMaxCapacity())
-                ? StatusEnum.REJECTED
-                : StatusEnum.PENDING;
+        // Bateu no teto? Aborta a missão e devolve 422!
+        if (pendingCount >= queue.getMaxCapacity()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    "The queue is currently at maximum capacity. Ticket rejected."
+            );
+        }
 
-        Ticket ticket = Ticket.createForQueue(chatRef, subject, queue.getId(), finalStatus);
-
+        // Se chegou aqui, tem vaga. Salva como PENDING!
+        Ticket ticket = Ticket.createForQueue(chatRef, subject, queue.getId(), StatusEnum.PENDING);
         return ticketRepository.save(ticket);
     }
 

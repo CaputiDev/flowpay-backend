@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
@@ -16,17 +17,28 @@ import java.util.UUID;
 @Table("ticket")
 public class Ticket {
     @Id
+    @Column("id")
     private UUID id;
     @ReadOnlyProperty
+    @Column("ticket_number")
     private Long ticketNumber;
+    @Column("chat_ref")
     private String chatRef;
+    @Column("subject")
     private String subject;
+    @Column("status")
     private StatusEnum status;
+    @Column("error_msg")
     private String errorMsg;
+    @Column("created_at")
     private LocalDateTime createdAt;
+    @Column("finished_at")
     private LocalDateTime finishedAt;
+    @Column("queue_id")
     private UUID queueId;
+    @Column("agent_id")
     private UUID agentId;
+    @Column("version")
     @Version
     private Long version;
 

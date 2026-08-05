@@ -4,6 +4,7 @@ import br.com.ubots.flowpay.dto.TicketRequest;
 import br.com.ubots.flowpay.model.Ticket;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
 import br.com.ubots.flowpay.service.RoutingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ public class TicketController {
     private final RoutingService routingService;
 
     @PostMapping
-    public ResponseEntity createTicket(@RequestBody TicketRequest request) {
+    public ResponseEntity createTicket(@RequestBody @Valid TicketRequest request) {
 
         Ticket ticket = routingService.routeNewTicket(request.getChatRef(), request.getSubject());
 
