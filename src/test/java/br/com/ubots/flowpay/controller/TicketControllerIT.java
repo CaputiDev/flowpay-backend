@@ -6,22 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.springframework.http.RequestEntity.post;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional // Garante que tudo que for salvo no banco durante o teste sofra ROLLBACK no final!
+@ActiveProfiles("test")
+@Transactional // Garante que tudo que for salvo no banco durante o teste sofra ROLLBACK no final
 class TicketControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
 
-    // Os testes vão aqui!
     @Test
     @DisplayName("Deve criar ticket e atribuir para atendente livre (HTTP 201)")
     void shouldCreateTicketAndAssignToAgent() throws Exception {
