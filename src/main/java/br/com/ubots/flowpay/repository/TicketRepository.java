@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
+import java.util.Collection;
+
 @Repository
 public interface TicketRepository extends CrudRepository<Ticket, UUID> {
 
@@ -26,4 +28,8 @@ public interface TicketRepository extends CrudRepository<Ticket, UUID> {
     long countByQueueIdAndStatus(UUID queueId, StatusEnum status);
 
     boolean existsByChatRefAndStatus(String chatRef, StatusEnum status);
+
+    boolean existsByChatRefAndStatusIn(String chatRef, Collection statuses);
+
+
 }

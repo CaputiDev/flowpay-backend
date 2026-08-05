@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -42,9 +43,7 @@ public class RoutingService {
     public Ticket routeNewTicket(String chatRef, String subject) {
 
         // Trava de Idempotência
-        if (ticketRepository.existsByChatRefAndStatus(chatRef, StatusEnum.IN_PROGRESS) ||
-                ticketRepository.existsByChatRefAndStatus(chatRef, StatusEnum.PENDING)) {
-
+        if (ticketRepository.existsByChatRefAndStatusIn(chatRef, List.of(StatusEnum.IN_PROGRESS, StatusEnum.PENDING))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "An active ticket already exists for this chat reference");
         }
 
@@ -53,7 +52,7 @@ public class RoutingService {
 
         // Busca da Fila correspondente
         Queue queue = queueRepository.findByTeam(targetTeam)
-                .orElseThrow(() -> new RuntimeException("Queue not  for team: " + targetTeam));
+                .orElseThrow(() -> new RuntimeException("Queue not found for team: " + targetTeam));
 
         // Busca atendente disponivel
 
