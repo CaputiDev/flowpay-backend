@@ -40,6 +40,7 @@ public class Ticket {
                 .queueId(queueId)
                 .agentId(agentId)
                 .status(StatusEnum.IN_PROGRESS)
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -52,6 +53,7 @@ public class Ticket {
                 .subject(subject)
                 .queueId(queueId)
                 .status(finalStatus)
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 }
