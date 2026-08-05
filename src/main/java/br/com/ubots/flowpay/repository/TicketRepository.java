@@ -24,4 +24,6 @@ public interface TicketRepository extends CrudRepository<Ticket, UUID> {
      * Usado para validar se a fila atingiu a capacidade máxima (ex: 3).
      */
     int countByQueueIdAndStatus(UUID queueId, StatusEnum status);
+
+    boolean existsByChatRefAndStatus(String chatRef, StatusEnum status);
 }

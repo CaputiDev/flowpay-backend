@@ -10,10 +10,12 @@ import br.com.ubots.flowpay.repository.QueueRepository;
 import br.com.ubots.flowpay.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
 import java.util.Optional;
@@ -39,6 +41,13 @@ public class RoutingService {
     @Transactional
     public Ticket routeNewTicket(String chatRef, String subject) {
 
+        // Trava de Idempotência
+        if (ticketRepository.existsByChatRefAndStatus(chatRef, StatusEnum.IN_PROGRESS) ||
+                ticketRepository.existsByChatRefAndStatus(chatRef, StatusEnum.PENDING)) {
+
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An active ticket already exists for this chat reference");
+        }
+
         // Classificação do assunto
         TeamEnum targetTeam = determineTeam(subject);
 
@@ -49,6 +58,8 @@ public class RoutingService {
         // Busca atendente disponivel
 
         Optional<Agent> availableAgent = agentRepository.findAvailableAgentByTeam(targetTeam);
+
+
 
         if (availableAgent.isPresent()) {
             return assignTicketToAgent(chatRef, subject, queue, availableAgent.get());
