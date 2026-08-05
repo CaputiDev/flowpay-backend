@@ -66,26 +66,33 @@ class TicketControllerIT {
     @Test
     @DisplayName("Deve enviar para fila (HTTP 202) quando atendentes estiverem lotados")
     void shouldSendToQueueWhenAgentsAreFull() throws Exception {
-        String jsonPayload = """
-                {
-                  "chatRef": "whatsapp_555199999922",
-                  "subject": "Dúvida sobre fatura do cartão"
-                }
-                """;
 
-        // Considerando que temos 3 atendentes e capacidade 3 cada (total 9).
-        // Disparamos 9 vezes para lotar todo mundo.
+        // 1. Lotando os atendentes (9 clientes diferentes)
         for (int i = 0; i < 9; i++) {
+            String jsonPayload = """
+                    {
+                      "chatRef": "whatsapp_cliente_%d",
+                      "subject": "Dúvida sobre fatura do cartão"
+                    }
+                    """.formatted(i);
+
             mockMvc.perform(post("/v1/tickets")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonPayload))
                     .andExpect(status().isCreated());
         }
 
-        // A 10ª requisição DEVE ir para a fila (PENDING / 202)
+        // 2. A 10ª requisição DEVE ir para a fila (PENDING / 202)
+        String transbordoPayload = """
+                {
+                  "chatRef": "whatsapp_cliente_transbordo",
+                  "subject": "Dúvida sobre fatura do cartão"
+                }
+                """;
+
         mockMvc.perform(post("/v1/tickets")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonPayload))
+                        .content(transbordoPayload))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }

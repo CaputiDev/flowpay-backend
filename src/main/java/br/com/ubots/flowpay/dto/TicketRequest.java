@@ -1,9 +1,9 @@
 package br.com.ubots.flowpay.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 public class TicketRequest {
     @NotBlank(message = "Chat reference cannot be null or blank")
     private String chatRef;
