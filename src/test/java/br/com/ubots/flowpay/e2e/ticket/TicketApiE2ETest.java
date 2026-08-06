@@ -1,4 +1,4 @@
-package br.com.ubots.flowpay.controller;
+package br.com.ubots.flowpay.e2e.ticket;
 
 import br.com.ubots.flowpay.dto.TicketResponse;
 import br.com.ubots.flowpay.model.Agent;
@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class TicketControllerIT {
+class TicketApiE2ETest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -59,7 +59,7 @@ class TicketControllerIT {
     }
 
     @Test
-    @DisplayName("Deve criar ticket e atribuir para atendente livre (HTTP 201)")
+    @DisplayName("E2E: Deve criar ticket e atribuir para atendente livre (HTTP 201)")
     void shouldCreateTicketAndAssignToAgent() throws Exception {
         String jsonPayload = """
                 {
@@ -69,17 +69,16 @@ class TicketControllerIT {
                 """;
 
         mockMvc.perform(post("/v1/tickets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonPayload))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonPayload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.chatRef").value("whatsapp_555199999911"));
     }
 
     @Test
-    @DisplayName("Deve enviar para fila (HTTP 202) quando atendentes estiverem lotados")
+    @DisplayName("E2E: Deve enviar para fila (HTTP 202) quando atendentes estiverem lotados")
     void shouldSendToQueueWhenAgentsAreFull() throws Exception {
-
         for (int i = 0; i < 9; i++) {
             String jsonPayload = """
                     {
@@ -89,8 +88,8 @@ class TicketControllerIT {
                     """.formatted(i);
 
             mockMvc.perform(post("/v1/tickets")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(jsonPayload))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(jsonPayload))
                     .andExpect(status().isCreated());
         }
 
@@ -102,14 +101,104 @@ class TicketControllerIT {
                 """;
 
         mockMvc.perform(post("/v1/tickets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transbordoPayload))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(transbordoPayload))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
 
     @Test
-    @DisplayName("Deve retornar HTTP 400 (Bad Request) quando o JSON estiver malformado")
+    @DisplayName("E2E: Deve recusar solicitação com HTTP 422 quando a fila atingir capacidade máxima (3 chamados)")
+    void shouldRejectTicketWith422WhenQueueIsFull() throws Exception {
+        for (int i = 0; i < 9; i++) {
+            routingService.routeNewTicket("client_active_" + i, "Dúvida sobre cartão");
+        }
+
+        for (int i = 0; i < 3; i++) {
+            routingService.routeNewTicket("client_queue_" + i, "Dúvida sobre cartão");
+        }
+
+        String overflowPayload = """
+                {
+                  "chatRef": "client_overflow",
+                  "subject": "Dúvida urgente cartão"
+                }
+                """;
+
+        mockMvc.perform(post("/v1/tickets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(overflowPayload))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("A fila atingiu a capacidade máxima. Solicitação recusada."));
+    }
+
+    @Test
+    @DisplayName("E2E: Deve rotear corretamente para LOANS ignorando maiúsculas e acentos no assunto")
+    void shouldRouteIgnoringCaseAndAccents() throws Exception {
+        String jsonPayload = """
+                {
+                  "chatRef": "telegram_loan_123",
+                  "subject": "SIMULAR EMPRÉSTIMO CONSIGNADO"
+                }
+                """;
+
+        mockMvc.perform(post("/v1/tickets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+    }
+
+    @Test
+    @DisplayName("E2E: Deve rotear para o time OTHERS quando o assunto for genérico")
+    void shouldRouteToOthersTeamForGenericSubjects() throws Exception {
+        String jsonPayload = """
+                {
+                  "chatRef": "chat_generic_1",
+                  "subject": "Quero falar com um atendente humano"
+                }
+                """;
+
+        mockMvc.perform(post("/v1/tickets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+    }
+
+    @Test
+    @DisplayName("E2E: Deve retornar HTTP 400 (Bad Request) quando falhar a validação do DTO (campos vazios)")
+    void shouldReturn400WhenDTOValidationFails() throws Exception {
+        String blankChatRefPayload = """
+                {
+                  "chatRef": "",
+                  "subject": "Dúvida cartão"
+                }
+                """;
+
+        mockMvc.perform(post("/v1/tickets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(blankChatRefPayload))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.message").value("chatRef: A referência da conversa não pode ser nula nem vazia"));
+
+        String blankSubjectPayload = """
+                {
+                  "chatRef": "chat_valid",
+                  "subject": "   "
+                }
+                """;
+
+        mockMvc.perform(post("/v1/tickets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(blankSubjectPayload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("subject: O assunto não pode ser nulo nem vazio"));
+    }
+
+    @Test
+    @DisplayName("E2E: Deve retornar HTTP 400 (Bad Request) quando o JSON estiver malformado")
     void shouldReturn400WhenJsonIsMalformed() throws Exception {
         String jsonPayload = """
                 {
@@ -118,13 +207,13 @@ class TicketControllerIT {
                 """;
 
         mockMvc.perform(post("/v1/tickets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonPayload))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonPayload))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Não deve criar ticket duplicado para o mesmo chatRef com status ativo")
+    @DisplayName("E2E: Não deve criar ticket duplicado para o mesmo chatRef com status ativo")
     void shouldPreventDuplicateTickets() throws Exception {
         String jsonPayload = """
                 {
@@ -141,31 +230,28 @@ class TicketControllerIT {
     }
 
     @Test
-    @DisplayName("Deve finalizar ticket (PATCH /v1/tickets/{id}/finish) e puxar a solicitação mais antiga da fila (FIFO)")
+    @DisplayName("E2E: Deve finalizar ticket (PATCH /v1/tickets/{id}/finish) e puxar a solicitação mais antiga da fila (FIFO)")
     void shouldFinishTicketAndAssignNextFromQueue() throws Exception {
-        // 1. Criar ticket 1 (atribuído a atendente)
         TicketResponse activeTicketResponse = routingService.routeNewTicket("chat_client_1", "Problema com cartão");
 
-        // Lotar capacidade para que próximo ticket vá para a fila
         for (int i = 2; i <= 9; i++) {
             routingService.routeNewTicket("chat_client_" + i, "Dúvida sobre cartão " + i);
         }
 
-        // Criar ticket 10 (vai para a fila como PENDING)
-        TicketResponse queuedTicketResponse = routingService.routeNewTicket("chat_queued_fifo", "Preciso de limite no cartão");
+        TicketResponse queuedTicketResponse = routingService.routeNewTicket("chat_queued_fifo",
+                "Preciso de limite no cartão");
         assertEquals("PENDING", queuedTicketResponse.getStatus().name());
 
-        // 2. Finalizar o ticket 1 via PATCH
         MvcResult finishResult = mockMvc.perform(patch("/v1/tickets/" + activeTicketResponse.getId() + "/finish"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RESOLVED"))
                 .andExpect(jsonPath("$.finishedAt").exists())
                 .andReturn();
 
-        TicketResponse finishedResponse = objectMapper.readValue(finishResult.getResponse().getContentAsString(), TicketResponse.class);
+        TicketResponse finishedResponse = objectMapper.readValue(finishResult.getResponse().getContentAsString(),
+                TicketResponse.class);
         assertNotNull(finishedResponse.getFinishedAt());
 
-        // 3. Verificar que a solicitação da fila (chat_queued_fifo) foi automaticamente atribuída e mudou para IN_PROGRESS
         var reassignedTicketOpt = ticketRepository.findById(queuedTicketResponse.getId());
         assertTrue(reassignedTicketOpt.isPresent());
         var reassignedTicket = reassignedTicketOpt.get();
@@ -176,14 +262,47 @@ class TicketControllerIT {
     }
 
     @Test
-    @DisplayName("Deve retornar HTTP 404 ao tentar finalizar ticket inexistente")
+    @DisplayName("E2E: Deve finalizar ticket quando a fila estiver vazia sem erros")
+    void shouldFinishTicketWhenQueueIsEmpty() throws Exception {
+        TicketResponse activeTicket = routingService.routeNewTicket("chat_empty_queue", "Dúvida cartão");
+
+        mockMvc.perform(patch("/v1/tickets/" + activeTicket.getId() + "/finish"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RESOLVED"))
+                .andExpect(jsonPath("$.finishedAt").exists());
+
+        var ticketInDb = ticketRepository.findById(activeTicket.getId()).orElseThrow();
+        assertEquals("RESOLVED", ticketInDb.getStatus().name());
+        assertNotNull(ticketInDb.getFinishedAt());
+    }
+
+    @Test
+    @DisplayName("E2E: Deve garantir isolamento de filas entre times ao finalizar atendimento")
+    void shouldEnsureQueueIsolationBetweenTeamsOnFinish() throws Exception {
+        TicketResponse loanActiveTicket = routingService.routeNewTicket("chat_loan_active", "Preciso de empréstimo");
+
+        for (int i = 0; i < 9; i++) {
+            routingService.routeNewTicket("chat_card_" + i, "Cartão de crédito");
+        }
+        TicketResponse cardPendingTicket = routingService.routeNewTicket("chat_card_queued", "Dúvida cartão");
+        assertEquals("PENDING", cardPendingTicket.getStatus().name());
+
+        mockMvc.perform(patch("/v1/tickets/" + loanActiveTicket.getId() + "/finish"))
+                .andExpect(status().isOk());
+
+        var cardTicketAfterFinish = ticketRepository.findById(cardPendingTicket.getId()).orElseThrow();
+        assertEquals("PENDING", cardTicketAfterFinish.getStatus().name());
+    }
+
+    @Test
+    @DisplayName("E2E: Deve retornar HTTP 404 ao tentar finalizar ticket inexistente")
     void shouldReturn404WhenTicketNotFound() throws Exception {
         mockMvc.perform(patch("/v1/tickets/" + UUID.randomUUID() + "/finish"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("Deve retornar HTTP 422 ao tentar finalizar ticket que já foi finalizado")
+    @DisplayName("E2E: Deve retornar HTTP 422 ao tentar finalizar ticket que já foi finalizado")
     void shouldReturn422WhenTicketAlreadyFinished() throws Exception {
         TicketResponse ticket = routingService.routeNewTicket("chat_test_finished", "Dúvida cartão");
 
@@ -195,7 +314,7 @@ class TicketControllerIT {
     }
 
     @Test
-    @DisplayName("Deve lidar com concorrência usando Lock Otimista e Retry")
+    @DisplayName("E2E: Deve lidar com concorrência usando Lock Otimista e Retry")
     void shouldHandleConcurrencyWithOptimisticLocking() throws InterruptedException {
         int concurrentRequests = 2;
         ExecutorService executor = Executors.newFixedThreadPool(concurrentRequests);
