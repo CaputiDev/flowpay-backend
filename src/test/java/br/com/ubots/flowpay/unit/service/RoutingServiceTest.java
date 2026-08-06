@@ -1,4 +1,4 @@
-package br.com.ubots.flowpay.service;
+package br.com.ubots.flowpay.unit.service;
 
 import br.com.ubots.flowpay.classifier.CreditCardClassifier;
 import br.com.ubots.flowpay.classifier.LoanClassifier;
@@ -12,6 +12,7 @@ import br.com.ubots.flowpay.model.enums.TeamEnum;
 import br.com.ubots.flowpay.repository.AgentRepository;
 import br.com.ubots.flowpay.repository.QueueRepository;
 import br.com.ubots.flowpay.repository.TicketRepository;
+import br.com.ubots.flowpay.service.RoutingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
