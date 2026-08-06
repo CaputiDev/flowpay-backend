@@ -1,6 +1,8 @@
 package br.com.ubots.flowpay.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.relational.core.conversion.DbActionExecutionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,6 +25,20 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
                 ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Captura falhas de concorrência irrecuperáveis após tentativas de retry (409 Conflict).
+     */
+    @ExceptionHandler({ OptimisticLockingFailureException.class, DbActionExecutionException.class })
+    public ResponseEntity<ErrorResponse> handleConcurrencyFailure(Exception ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "Concorrência detectada na alteração do recurso. Por favor, tente novamente.",
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
