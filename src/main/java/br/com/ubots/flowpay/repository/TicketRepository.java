@@ -4,12 +4,12 @@ import br.com.ubots.flowpay.model.Ticket;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
-
-import java.util.Collection;
 
 @Repository
 public interface TicketRepository extends CrudRepository<Ticket, UUID> {
@@ -19,7 +19,7 @@ public interface TicketRepository extends CrudRepository<Ticket, UUID> {
      * Aplica o critério de desempate duplo (created_at + ticket_number) para garantir FIFO estrito.
      */
     @Query("SELECT * FROM ticket WHERE queue_id = :queueId AND status = :status ORDER BY created_at ASC, ticket_number ASC LIMIT 1")
-    Optional<Ticket> findOldestTicketInQueue(UUID queueId, String status);
+    Optional<Ticket> findOldestTicketInQueue(@Param("queueId") UUID queueId, @Param("status") String status);
 
     /**
      * Conta quantos chamados estão aguardando em uma fila específica.
@@ -29,7 +29,5 @@ public interface TicketRepository extends CrudRepository<Ticket, UUID> {
 
     boolean existsByChatRefAndStatus(String chatRef, StatusEnum status);
 
-    boolean existsByChatRefAndStatusIn(String chatRef, Collection statuses);
-
-
+    boolean existsByChatRefAndStatusIn(String chatRef, Collection<StatusEnum> statuses);
 }
