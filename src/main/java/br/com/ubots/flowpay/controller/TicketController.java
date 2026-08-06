@@ -1,5 +1,6 @@
 package br.com.ubots.flowpay.controller;
 
+import br.com.ubots.flowpay.controller.doc.TicketControllerOpenApi;
 import br.com.ubots.flowpay.dto.TicketRequest;
 import br.com.ubots.flowpay.dto.TicketResponse;
 import br.com.ubots.flowpay.service.RoutingService;
@@ -14,13 +15,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/tickets")
 @RequiredArgsConstructor
-public class TicketController {
+public class TicketController implements TicketControllerOpenApi {
 
     private final RoutingService routingService;
 
     /**
      * Endpoint para criação e roteamento de novas solicitações de atendimento.
      */
+    @Override
     @PostMapping
     public ResponseEntity<TicketResponse> createTicket(@RequestBody @Valid TicketRequest request) {
         TicketResponse response = routingService.routeNewTicket(request.getChatRef(), request.getSubject());
@@ -36,6 +38,7 @@ public class TicketController {
     /**
      * Endpoint para finalização de um atendimento atual, liberando a vaga do atendente.
      */
+    @Override
     @PatchMapping({"/{id}/finish", "/{id}/finalizar"})
     public ResponseEntity<TicketResponse> finishTicket(@PathVariable UUID id) {
         TicketResponse response = routingService.finishTicket(id);
