@@ -39,7 +39,7 @@ public class TicketController implements TicketControllerOpenApi {
      * Endpoint para finalização de um atendimento atual, liberando a vaga do atendente.
      */
     @Override
-    @PatchMapping({"/{id}/finish", "/{id}/finalizar"})
+    @PatchMapping("/{id}/finish")
     public ResponseEntity<TicketResponse> finishTicket(@PathVariable UUID id) {
         TicketResponse response = routingService.finishTicket(id);
         return ResponseEntity.ok(response);

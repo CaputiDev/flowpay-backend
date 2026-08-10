@@ -103,7 +103,7 @@ target/site/jacoco/index.html
 ---
 
 ### 2. Finalizar Atendimento
-`PATCH /v1/tickets/{id}/finish` (ou `/v1/tickets/{id}/finalizar`)
+`PATCH /v1/tickets/{id}/finish`
 
 **Respostas Possíveis:**
 - `200 OK`: Solicitação encerrada (`status: RESOLVED`). Atendente é liberado e a solicitação pendente mais antiga da fila (FIFO) é automaticamente reatribuída.

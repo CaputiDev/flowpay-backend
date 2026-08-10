@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2026-08-10T17:00:00.000Z",
+  "__export_date": "2026-08-10T17:28:00.000Z",
   "__export_source": "insomnia.desktop.app:v2023.5.8",
   "resources": [
     {
@@ -11,7 +11,7 @@
       "modified": 1723310000000,
       "created": 1723310000000,
       "name": "FlowPay MVP",
-      "description": "Suíte de testes de integração da API FlowPay MVP",
+      "description": "API REST para roteamento automático de solicitações de atendimento entre equipes",
       "scope": "collection"
     },
     {
@@ -22,11 +22,13 @@
       "created": 1723310000000,
       "name": "Base Environment",
       "data": {
-        "base_url": "http://localhost:8080"
+        "base_url": "http://localhost:8080",
+        "ticket_id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
       },
       "dataPropertyOrder": {
         "&": [
-          "base_url"
+          "base_url",
+          "ticket_id"
         ]
       },
       "color": null,
@@ -39,21 +41,21 @@
       "parentId": "wrk_flowpay_mvp",
       "modified": 1723310000000,
       "created": 1723310000000,
-      "name": "Tickets (V1)",
-      "description": "Requisições de roteamento de solicitações de atendimento",
+      "name": "Solicitações de Atendimento",
+      "description": "Endpoints para criação, roteamento automático e encerramento de solicitações de atendimento",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 100
     },
     {
-      "_id": "req_ticket_happy_path",
+      "_id": "req_ticket_create",
       "_type": "request",
       "parentId": "fld_tickets",
       "modified": 1723310000000,
       "created": 1723310000000,
       "url": "{{ _.base_url }}/v1/tickets",
-      "name": "1. Happy Path - Atendente Livre (201 Created)",
-      "description": "Valida se o motor atribui o ticket diretamente a um atendente da equipe de Cartões (CREDIT_CARDS).",
+      "name": "Criar e Rotear Solicitação",
+      "description": "Recebe uma nova solicitação de atendimento contendo a referência da conversa (chatRef) e o assunto. Classifica o assunto entre as equipes ('Cartões', 'Empréstimos' ou 'Outros Assuntos'), atribui a solicitação ao atendente com menor carga (até 3 atendimentos simultâneos) ou transborda para a fila FIFO caso todos os atendentes estejam lotados.",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
@@ -70,100 +72,20 @@
       "metaSortKey": 100
     },
     {
-      "_id": "req_ticket_regex_loans",
+      "_id": "req_ticket_finish",
       "_type": "request",
       "parentId": "fld_tickets",
       "modified": 1723310000000,
       "created": 1723310000000,
-      "url": "{{ _.base_url }}/v1/tickets",
-      "name": "2. Roteamento por Assunto / Regex (201 Created)",
-      "description": "Valida se o roteador identifica a palavra 'empréstimo' e direciona para a equipe de LOANS.",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"chatRef\": \"telegram_99887766\",\n  \"subject\": \"Gostaria de simular uma taxa de empréstimo\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
+      "url": "{{ _.base_url }}/v1/tickets/{{ _.ticket_id }}/finish",
+      "name": "Finalizar Atendimento",
+      "description": "Finaliza a solicitação de atendimento ativa identificada pelo ID (Status: RESOLVED). Ao finalizar, o sistema decrementa a carga de trabalho do atendente e puxa automaticamente a solicitação pendente mais antiga da fila (respeitando a regra FIFO).",
+      "method": "PATCH",
+      "body": {},
+      "headers": [],
       "parameters": [],
       "authentication": {},
       "metaSortKey": 200
-    },
-    {
-      "_id": "req_ticket_queue_overflow",
-      "_type": "request",
-      "parentId": "fld_tickets",
-      "modified": 1723310000000,
-      "created": 1723310000000,
-      "url": "{{ _.base_url }}/v1/tickets",
-      "name": "3. Transbordo para Fila (202 Accepted)",
-      "description": "Dispare quando a capacidade dos atendentes estiver lotada. O motor coloca o ticket em PENDING na fila.",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"chatRef\": \"whatsapp_555199999922\",\n  \"subject\": \"Dúvida sobre fatura do cartão\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": 300
-    },
-    {
-      "_id": "req_ticket_queue_full_rejected",
-      "_type": "request",
-      "parentId": "fld_tickets",
-      "modified": 1723310000000,
-      "created": 1723310000000,
-      "url": "{{ _.base_url }}/v1/tickets",
-      "name": "4. Fila Lotada / Rejeição (422 Unprocessable Entity)",
-      "description": "Dispare quando a fila da equipe também atingir max_capacity. O motor retorna REJECTED.",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"chatRef\": \"whatsapp_555199999999\",\n  \"subject\": \"Preciso de ajuda urgente com cartão\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": 400
-    },
-    {
-      "_id": "req_ticket_bad_request",
-      "_type": "request",
-      "parentId": "fld_tickets",
-      "modified": 1723310000000,
-      "created": 1723310000000,
-      "url": "{{ _.base_url }}/v1/tickets",
-      "name": "5. Bad Request / Validação DTO (400 Bad Request)",
-      "description": "Valida as anotações do Bean Validation (@NotBlank) no DTO de requisição.",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"chatRef\": \"\",\n  \"subject\": \"\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "parameters": [],
-      "authentication": {},
-      "metaSortKey": 500
     }
   ]
 }
