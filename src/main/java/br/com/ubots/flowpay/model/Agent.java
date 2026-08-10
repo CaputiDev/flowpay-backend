@@ -18,6 +18,14 @@ public class Agent {
     private String name;
     private TeamEnum team;
     private Integer currentLoad;
+    private Integer maxCapacity;
     @Version
     private Long version;
+
+    public void incrementLoad() {
+        if (this.currentLoad == null) {
+            this.currentLoad = 0; // Proteção contra NullPointer caso o banco traga nulo
+        }
+        this.currentLoad++;
+    }
 }

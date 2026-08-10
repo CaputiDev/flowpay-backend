@@ -29,4 +29,31 @@ public class Ticket {
     private UUID agentId;
     @Version
     private Long version;
+
+    /**
+     * Factory Method para um Ticket que já nasce atribuído a um atendente.
+     */
+    public static Ticket createAssigned(String chatRef, String subject, UUID queueId, UUID agentId) {
+        return Ticket.builder()
+                .chatRef(chatRef)
+                .subject(subject)
+                .queueId(queueId)
+                .agentId(agentId)
+                .status(StatusEnum.IN_PROGRESS)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Factory Method para um Ticket que vai aguardar na fila ou foi rejeitado.
+     */
+    public static Ticket createForQueue(String chatRef, String subject, UUID queueId, StatusEnum finalStatus) {
+        return Ticket.builder()
+                .chatRef(chatRef)
+                .subject(subject)
+                .queueId(queueId)
+                .status(finalStatus)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
 }
