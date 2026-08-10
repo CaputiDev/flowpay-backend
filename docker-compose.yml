@@ -1,18 +1,52 @@
 version: '3.8'
 
 services:
+  # ============================================================================
+  # Serviço do Banco de Dados PostgreSQL
+  # ============================================================================
   db:
     image: postgres:15-alpine
     container_name: flowpay-postgres
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-flowpay_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5439:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # DevSecOps & Resiliência: Healthcheck para validar se o PostgreSQL aceita conexões antes da API subir
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-flowpay_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================================================
+  # Serviço da Aplicação Spring Boot (API)
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flowpay-api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-flowpay_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_URL=jdbc:postgresql://db:5432/${DB_NAME:-flowpay_db}
+    # Prevenção de Race Condition: Aguarda a conclusão bem-sucedida do Healthcheck do banco
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+    driver: local
