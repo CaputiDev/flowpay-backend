@@ -1,0 +1,169 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-08-10T17:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_flowpay_mvp",
+      "_type": "workspace",
+      "parentId": null,
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "name": "FlowPay MVP",
+      "description": "Suíte de testes de integração da API FlowPay MVP",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_flowpay_base",
+      "_type": "environment",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1723310000000
+    },
+    {
+      "_id": "fld_tickets",
+      "_type": "request_group",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "name": "Tickets (V1)",
+      "description": "Requisições de roteamento de solicitações de atendimento",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 100
+    },
+    {
+      "_id": "req_ticket_happy_path",
+      "_type": "request",
+      "parentId": "fld_tickets",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/tickets",
+      "name": "1. Happy Path - Atendente Livre (201 Created)",
+      "description": "Valida se o motor atribui o ticket diretamente a um atendente da equipe de Cartões (CREDIT_CARDS).",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"chatRef\": \"whatsapp_555199999911\",\n  \"subject\": \"Preciso de ajuda com limite do meu cartão de crédito\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 100
+    },
+    {
+      "_id": "req_ticket_regex_loans",
+      "_type": "request",
+      "parentId": "fld_tickets",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/tickets",
+      "name": "2. Roteamento por Assunto / Regex (201 Created)",
+      "description": "Valida se o roteador identifica a palavra 'empréstimo' e direciona para a equipe de LOANS.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"chatRef\": \"telegram_99887766\",\n  \"subject\": \"Gostaria de simular uma taxa de empréstimo\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 200
+    },
+    {
+      "_id": "req_ticket_queue_overflow",
+      "_type": "request",
+      "parentId": "fld_tickets",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/tickets",
+      "name": "3. Transbordo para Fila (202 Accepted)",
+      "description": "Dispare quando a capacidade dos atendentes estiver lotada. O motor coloca o ticket em PENDING na fila.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"chatRef\": \"whatsapp_555199999922\",\n  \"subject\": \"Dúvida sobre fatura do cartão\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 300
+    },
+    {
+      "_id": "req_ticket_queue_full_rejected",
+      "_type": "request",
+      "parentId": "fld_tickets",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/tickets",
+      "name": "4. Fila Lotada / Rejeição (422 Unprocessable Entity)",
+      "description": "Dispare quando a fila da equipe também atingir max_capacity. O motor retorna REJECTED.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"chatRef\": \"whatsapp_555199999999\",\n  \"subject\": \"Preciso de ajuda urgente com cartão\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 400
+    },
+    {
+      "_id": "req_ticket_bad_request",
+      "_type": "request",
+      "parentId": "fld_tickets",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/tickets",
+      "name": "5. Bad Request / Validação DTO (400 Bad Request)",
+      "description": "Valida as anotações do Bean Validation (@NotBlank) no DTO de requisição.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"chatRef\": \"\",\n  \"subject\": \"\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 500
+    }
+  ]
+}
