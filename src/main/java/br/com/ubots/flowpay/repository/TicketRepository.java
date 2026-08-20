@@ -30,4 +30,16 @@ public interface TicketRepository extends CrudRepository<Ticket, UUID> {
     boolean existsByChatRefAndStatus(String chatRef, StatusEnum status);
 
     boolean existsByChatRefAndStatusIn(String chatRef, Collection<StatusEnum> statuses);
+
+    /**
+     * Busca todas as solicitações ativas (em andamento) no sistema.
+     */
+    @Query("SELECT * FROM ticket WHERE status = 'IN_PROGRESS' ORDER BY created_at ASC, ticket_number ASC")
+    java.util.List<Ticket> findAllActiveTickets();
+
+    /**
+     * Busca todas as solicitações em espera (pendentes) ordenadas por ordem de chegada (FIFO).
+     */
+    @Query("SELECT * FROM ticket WHERE status = 'PENDING' ORDER BY created_at ASC, ticket_number ASC")
+    java.util.List<Ticket> findAllWaitingTickets();
 }
