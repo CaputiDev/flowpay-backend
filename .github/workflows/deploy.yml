@@ -30,7 +30,9 @@ jobs:
           cache: "maven"
 
       - name: 🧪 Executar Testes Automatizados
-        run: ./mvnw clean test
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean test
 
       - name: 🏷️ Definir Nome da Imagem em Minúsculo
         run: |
