@@ -119,6 +119,7 @@ jobs:
             docker compose pull
 
             echo "🚀 Reiniciando os containers..."
+            docker rm -f flowpay-api flowpay-postgres 2>/dev/null || true
             docker compose up -d --remove-orphans
 
             echo "🧹 Limpando imagens antigas não utilizadas..."
