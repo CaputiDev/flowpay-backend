@@ -96,7 +96,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_name }}:latest
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
             cd ~/flowpay-app
 
@@ -126,14 +126,20 @@ jobs:
             docker image prune -f
 
             echo "🩺 Validando disponibilidade da aplicação..."
+            HEALTHY=0
             for i in {1..12}; do
               if curl -sSf http://localhost:8080/v1/queues/status > /dev/null 2>&1; then
                 echo "✅ Aplicação online e respondendo com sucesso!"
-                exit 0
+                HEALTHY=1
+                break
               fi
               echo "⏳ Aguardando inicialização da API (\$i/12)..."
               sleep 5
             done
 
-            echo "⚠️ Aviso: Aplicação ainda não respondeu no healthcheck dentro do tempo esperado, verifique os logs com 'docker compose logs'."
+            if [ "\$HEALTHY" -ne 1 ]; then
+              echo "❌ Erro: Aplicação não respondeu no healthcheck dentro do tempo esperado."
+              docker compose logs --tail=50 api
+              exit 1
+            fi
           EOF
