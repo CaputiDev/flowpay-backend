@@ -50,3 +50,9 @@ Content-Type: application/json
   "chatRef": "",
   "subject": ""
 }
+
+###
+
+### 6. Consultar Estado Consolidado das Filas (Esperado: HTTP 200 OK)
+GET http://localhost:8080/v1/queues/status
+Accept: application/json
