@@ -28,6 +28,7 @@ services:
   # Serviço da Aplicação Spring Boot (API)
   # ============================================================================
   api:
+    image: ${API_IMAGE:-ghcr.io/caputidev/flowpay-mvp:latest}
     build:
       context: .
       dockerfile: Dockerfile
