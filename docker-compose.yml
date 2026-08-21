@@ -10,6 +10,7 @@ services:
       POSTGRES_DB: ${DB_NAME:-flowpay_db}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      TZ: America/Sao_Paulo
     ports:
       - "5432:5432"
     volumes:
@@ -35,6 +36,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - TZ=America/Sao_Paulo
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-flowpay_db}

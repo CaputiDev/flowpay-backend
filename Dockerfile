@@ -32,8 +32,9 @@ RUN chown -R flowpayuser:flowpaygroup /app
 # Transfere a execução para o usuário não-root
 USER flowpayuser
 
-# FinOps & JVM Tuning: Garante o limite dinâmico de memória para instâncias EC2 (t2.micro / t3.micro)
+# FinOps & JVM Tuning: Garante o limite dinâmico de memória para instâncias EC2 (t2.micro / t3.micro) e Timezone de Brasília
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+ENV TZ="America/Sao_Paulo"
 
 # Exposição da porta padrão da aplicação Spring Boot
 EXPOSE 8080
