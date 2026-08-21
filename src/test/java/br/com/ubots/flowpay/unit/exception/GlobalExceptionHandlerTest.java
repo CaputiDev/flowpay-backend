@@ -87,4 +87,46 @@ class GlobalExceptionHandlerTest {
         assertEquals(422, response.getBody().status());
         assertEquals("Status inválido", response.getBody().message());
     }
+
+    @Test
+    @DisplayName("Deve tratar NoResourceFoundException / NoHandlerFoundException com HTTP 404 Not Found")
+    void shouldHandleResourceNotFoundException() {
+        Exception ex = new RuntimeException("Resource not found");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleResourceNotFound(ex, request);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(404, response.getBody().status());
+        assertEquals("Endpoint ou recurso não encontrado", response.getBody().message());
+    }
+
+    @Test
+    @DisplayName("Deve tratar HttpRequestMethodNotSupportedException com HTTP 405 Method Not Allowed")
+    void shouldHandleMethodNotSupportedException() {
+        org.springframework.web.HttpRequestMethodNotSupportedException ex =
+                new org.springframework.web.HttpRequestMethodNotSupportedException("DELETE");
+
+        request.setMethod("DELETE");
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleMethodNotSupported(ex, request);
+
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(405, response.getBody().status());
+        assertTrue(response.getBody().message().contains("DELETE"));
+    }
+
+    @Test
+    @DisplayName("Deve tratar Exception genérica não mapeada com HTTP 500 Internal Server Error")
+    void shouldHandleGenericException() {
+        Exception ex = new NullPointerException("Erro inesperado no servidor");
+
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleGenericException(ex, request);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(500, response.getBody().status());
+        assertEquals("Erro inesperado no servidor", response.getBody().message());
+    }
 }
+

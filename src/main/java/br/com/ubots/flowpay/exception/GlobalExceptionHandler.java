@@ -6,9 +6,12 @@ import org.springframework.data.relational.core.conversion.DbActionExecutionExce
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Handler global de exceções para desacoplar erros de domínio da camada HTTP.
@@ -70,6 +73,34 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
+     * Captura rotas, endpoints e recursos estáticos inexistentes (404 Not Found).
+     */
+    @ExceptionHandler({ NoResourceFoundException.class, NoHandlerFoundException.class })
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(Exception ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                "Endpoint ou recurso não encontrado",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
+     * Captura métodos HTTP não suportados para o endpoint (405 Method Not Allowed).
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.METHOD_NOT_ALLOWED.value(),
+                "Method Not Allowed",
+                "Método HTTP '" + request.getMethod() + "' não suportado para esta rota",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
     /**
