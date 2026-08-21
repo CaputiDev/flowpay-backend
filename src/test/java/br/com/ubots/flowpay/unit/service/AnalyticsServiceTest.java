@@ -1,6 +1,7 @@
 package br.com.ubots.flowpay.unit.service;
 
 import br.com.ubots.flowpay.dto.MonthlyAnalyticsResponse;
+import br.com.ubots.flowpay.dto.TeamAnalyticsResponse;
 import br.com.ubots.flowpay.model.Queue;
 import br.com.ubots.flowpay.model.Ticket;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
@@ -109,5 +110,54 @@ class AnalyticsServiceTest {
         assertNotNull(augustMetric.getByTeam());
         assertEquals(2, augustMetric.getByTeam().get(TeamEnum.CREDIT_CARDS).getTotalTickets());
         assertEquals(1, augustMetric.getByTeam().get(TeamEnum.LOANS).getTotalTickets());
+    }
+
+    @Test
+    @DisplayName("Analytics: Deve consolidar métricas exclusivas por equipe (getTeamAnalytics)")
+    void shouldConsolidateTeamAnalytics() {
+        UUID cardsQueueId = UUID.randomUUID();
+        Queue cardsQueue = Queue.builder().id(cardsQueueId).team(TeamEnum.CREDIT_CARDS).maxCapacity(3).build();
+
+        LocalDateTime august = LocalDateTime.of(2026, 8, 15, 10, 0);
+
+        Ticket resolvedTicket = Ticket.builder()
+                .id(UUID.randomUUID())
+                .queueId(cardsQueueId)
+                .status(StatusEnum.RESOLVED)
+                .createdAt(august)
+                .startedAt(august.plusSeconds(30))
+                .finishedAt(august.plusSeconds(150))
+                .finished(true)
+                .waitingTimeSeconds(30L)
+                .serviceTimeSeconds(120L)
+                .totalTimeSeconds(150L)
+                .build();
+
+        Ticket inProgressTicket = Ticket.builder()
+                .id(UUID.randomUUID())
+                .queueId(cardsQueueId)
+                .status(StatusEnum.IN_PROGRESS)
+                .createdAt(august)
+                .startedAt(august.plusSeconds(10))
+                .finished(false)
+                .waitingTimeSeconds(10L)
+                .build();
+
+        when(ticketRepository.findAllOrderByCreatedAt()).thenReturn(List.of(resolvedTicket, inProgressTicket));
+        when(queueRepository.findAll()).thenReturn(List.of(cardsQueue));
+
+        TeamAnalyticsResponse response = analyticsService.getTeamAnalytics(TeamEnum.CREDIT_CARDS);
+
+        assertNotNull(response);
+        assertEquals(TeamEnum.CREDIT_CARDS, response.getTeam());
+        assertEquals(2, response.getSummary().getTotalTickets());
+        assertEquals(1, response.getSummary().getResolvedTickets());
+        assertEquals(0, response.getSummary().getRejectedTickets());
+        assertEquals(50.0, response.getSummary().getSuccessRatePercent());
+        assertEquals(20.0, response.getSummary().getAvgWaitingTimeSeconds());
+        assertEquals(120.0, response.getSummary().getAvgServiceTimeSeconds());
+
+        assertEquals(1, response.getMonthlyHistory().size());
+        assertEquals("2026-08", response.getMonthlyHistory().get(0).getMonth());
     }
 }

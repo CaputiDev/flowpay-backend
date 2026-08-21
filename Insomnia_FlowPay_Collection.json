@@ -150,6 +150,38 @@
       "parameters": [],
       "authentication": {},
       "metaSortKey": 500
+    },
+    {
+      "_id": "req_analytics_teams",
+      "_type": "request",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/analytics/teams",
+      "name": "Consultar Analytics de Todas as Equipes",
+      "description": "Consulta as métricas analíticas e histórico mês a mês de todas as equipes de atendimento.",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 600
+    },
+    {
+      "_id": "req_analytics_team_cards",
+      "_type": "request",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/analytics/teams/CREDIT_CARDS",
+      "name": "Consultar Analytics da Equipe Cartões",
+      "description": "Consulta as métricas analíticas exclusivas da equipe de Cartões de Crédito (CREDIT_CARDS).",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 700
     }
   ]
 }

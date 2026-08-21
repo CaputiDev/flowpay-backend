@@ -2,6 +2,8 @@ package br.com.ubots.flowpay.unit.controller.analytics;
 
 import br.com.ubots.flowpay.controller.analytics.AnalyticsController;
 import br.com.ubots.flowpay.dto.MonthlyAnalyticsResponse;
+import br.com.ubots.flowpay.dto.TeamAnalyticsResponse;
+import br.com.ubots.flowpay.model.enums.TeamEnum;
 import br.com.ubots.flowpay.service.AnalyticsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -82,5 +84,49 @@ class AnalyticsControllerTest {
                 .andExpect(jsonPath("$.totalTickets").value(25))
                 .andExpect(jsonPath("$.totalResolved").value(20))
                 .andExpect(jsonPath("$.totalRejected").value(5));
+    }
+
+    @Test
+    @DisplayName("AnalyticsController: Deve retornar 200 OK no endpoint /v1/analytics/teams")
+    void shouldReturnAllTeamsAnalytics() throws Exception {
+        TeamAnalyticsResponse cards = TeamAnalyticsResponse.builder()
+                .team(TeamEnum.CREDIT_CARDS)
+                .teamName("CREDIT_CARDS")
+                .summary(TeamAnalyticsResponse.TeamSummaryDto.builder().totalTickets(5).build())
+                .build();
+
+        when(analyticsService.getAllTeamsAnalytics()).thenReturn(List.of(cards));
+
+        mockMvc.perform(get("/v1/analytics/teams")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].team").value("CREDIT_CARDS"))
+                .andExpect(jsonPath("$[0].summary.totalTickets").value(5));
+    }
+
+    @Test
+    @DisplayName("AnalyticsController: Deve retornar 200 OK no endpoint /v1/analytics/teams/{team}")
+    void shouldReturnSpecificTeamAnalytics() throws Exception {
+        TeamAnalyticsResponse loans = TeamAnalyticsResponse.builder()
+                .team(TeamEnum.LOANS)
+                .teamName("LOANS")
+                .summary(TeamAnalyticsResponse.TeamSummaryDto.builder()
+                        .totalTickets(12)
+                        .resolvedTickets(10)
+                        .rejectedTickets(2)
+                        .successRatePercent(83.33)
+                        .build())
+                .build();
+
+        when(analyticsService.getTeamAnalytics(TeamEnum.LOANS)).thenReturn(loans);
+
+        mockMvc.perform(get("/v1/analytics/teams/LOANS")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.team").value("LOANS"))
+                .andExpect(jsonPath("$.summary.totalTickets").value(12))
+                .andExpect(jsonPath("$.summary.resolvedTickets").value(10))
+                .andExpect(jsonPath("$.summary.successRatePercent").value(83.33));
     }
 }

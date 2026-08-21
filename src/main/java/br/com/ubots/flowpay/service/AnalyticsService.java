@@ -1,6 +1,7 @@
 package br.com.ubots.flowpay.service;
 
 import br.com.ubots.flowpay.dto.MonthlyAnalyticsResponse;
+import br.com.ubots.flowpay.dto.TeamAnalyticsResponse;
 import br.com.ubots.flowpay.model.Queue;
 import br.com.ubots.flowpay.model.Ticket;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
@@ -58,6 +59,143 @@ public class AnalyticsService {
         return MonthlyAnalyticsResponse.builder()
                 .overallSummary(overallSummary)
                 .monthlyMetrics(monthlyMetrics)
+                .build();
+    }
+
+    /**
+     * Gera as métricas analíticas e histórico mensal de uma equipe específica.
+     */
+    @Transactional(readOnly = true)
+    public TeamAnalyticsResponse getTeamAnalytics(TeamEnum team) {
+        List<Ticket> allTickets = ticketRepository.findAllOrderByCreatedAt();
+        Map<UUID, Queue> queueMap = StreamSupport.stream(queueRepository.findAll().spliterator(), false)
+                .collect(Collectors.toMap(Queue::getId, q -> q));
+
+        List<Ticket> teamTickets = allTickets.stream()
+                .filter(t -> t.getQueueId() != null && queueMap.containsKey(t.getQueueId()) && queueMap.get(t.getQueueId()).getTeam() == team)
+                .toList();
+
+        return buildTeamAnalyticsResponse(team, teamTickets);
+    }
+
+    /**
+     * Gera as métricas analíticas de todas as equipes.
+     */
+    @Transactional(readOnly = true)
+    public List<TeamAnalyticsResponse> getAllTeamsAnalytics() {
+        return Arrays.stream(TeamEnum.values())
+                .map(this::getTeamAnalytics)
+                .toList();
+    }
+
+    private TeamAnalyticsResponse buildTeamAnalyticsResponse(TeamEnum team, List<Ticket> teamTickets) {
+        long totalTickets = teamTickets.size();
+        long resolvedTickets = teamTickets.stream().filter(t -> StatusEnum.RESOLVED.equals(t.getStatus())).count();
+        long rejectedTickets = teamTickets.stream().filter(t -> StatusEnum.REJECTED.equals(t.getStatus())).count();
+        long inProgressTickets = teamTickets.stream().filter(t -> StatusEnum.IN_PROGRESS.equals(t.getStatus())).count();
+        long pendingTickets = teamTickets.stream().filter(t -> StatusEnum.PENDING.equals(t.getStatus())).count();
+
+        double avgWaitingTime = calculateAverage(
+                teamTickets.stream()
+                        .filter(t -> t.getWaitingTimeSeconds() != null && t.getStartedAt() != null)
+                        .mapToLong(Ticket::getWaitingTimeSeconds)
+                        .toArray()
+        );
+
+        double avgServiceTime = calculateAverage(
+                teamTickets.stream()
+                        .filter(t -> StatusEnum.RESOLVED.equals(t.getStatus()) && t.getServiceTimeSeconds() != null)
+                        .mapToLong(Ticket::getServiceTimeSeconds)
+                        .toArray()
+        );
+
+        double avgTotalTime = calculateAverage(
+                teamTickets.stream()
+                        .filter(t -> t.isFinished() && t.getTotalTimeSeconds() != null)
+                        .mapToLong(Ticket::getTotalTimeSeconds)
+                        .toArray()
+        );
+
+        double successRate = totalTickets > 0
+                ? BigDecimal.valueOf(((double) resolvedTickets / totalTickets) * 100).setScale(2, RoundingMode.HALF_UP).doubleValue()
+                : 100.0;
+
+        TeamAnalyticsResponse.TeamSummaryDto summary = TeamAnalyticsResponse.TeamSummaryDto.builder()
+                .totalTickets(totalTickets)
+                .resolvedTickets(resolvedTickets)
+                .rejectedTickets(rejectedTickets)
+                .inProgressTickets(inProgressTickets)
+                .pendingTickets(pendingTickets)
+                .avgWaitingTimeSeconds(avgWaitingTime)
+                .avgServiceTimeSeconds(avgServiceTime)
+                .avgTotalTimeSeconds(avgTotalTime)
+                .successRatePercent(successRate)
+                .build();
+
+        Map<String, List<Ticket>> ticketsByMonth = teamTickets.stream()
+                .filter(t -> t.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(
+                        t -> t.getCreatedAt().format(MONTH_FORMATTER),
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        List<TeamAnalyticsResponse.TeamMonthlyHistoryDto> monthlyHistory = ticketsByMonth.entrySet().stream()
+                .map(entry -> {
+                    String month = entry.getKey();
+                    List<Ticket> mTickets = entry.getValue();
+
+                    long mTotal = mTickets.size();
+                    long mResolved = mTickets.stream().filter(t -> StatusEnum.RESOLVED.equals(t.getStatus())).count();
+                    long mRejected = mTickets.stream().filter(t -> StatusEnum.REJECTED.equals(t.getStatus())).count();
+                    long mInProgress = mTickets.stream().filter(t -> StatusEnum.IN_PROGRESS.equals(t.getStatus())).count();
+                    long mPending = mTickets.stream().filter(t -> StatusEnum.PENDING.equals(t.getStatus())).count();
+
+                    double mAvgWaiting = calculateAverage(
+                            mTickets.stream()
+                                    .filter(t -> t.getWaitingTimeSeconds() != null && t.getStartedAt() != null)
+                                    .mapToLong(Ticket::getWaitingTimeSeconds)
+                                    .toArray()
+                    );
+
+                    double mAvgService = calculateAverage(
+                            mTickets.stream()
+                                    .filter(t -> StatusEnum.RESOLVED.equals(t.getStatus()) && t.getServiceTimeSeconds() != null)
+                                    .mapToLong(Ticket::getServiceTimeSeconds)
+                                    .toArray()
+                    );
+
+                    double mAvgTotal = calculateAverage(
+                            mTickets.stream()
+                                    .filter(t -> t.isFinished() && t.getTotalTimeSeconds() != null)
+                                    .mapToLong(Ticket::getTotalTimeSeconds)
+                                    .toArray()
+                    );
+
+                    double mSuccessRate = mTotal > 0
+                            ? BigDecimal.valueOf(((double) mResolved / mTotal) * 100).setScale(2, RoundingMode.HALF_UP).doubleValue()
+                            : 100.0;
+
+                    return TeamAnalyticsResponse.TeamMonthlyHistoryDto.builder()
+                            .month(month)
+                            .totalTickets(mTotal)
+                            .resolvedTickets(mResolved)
+                            .rejectedTickets(mRejected)
+                            .inProgressTickets(mInProgress)
+                            .pendingTickets(mPending)
+                            .avgWaitingTimeSeconds(mAvgWaiting)
+                            .avgServiceTimeSeconds(mAvgService)
+                            .avgTotalTimeSeconds(mAvgTotal)
+                            .successRatePercent(mSuccessRate)
+                            .build();
+                })
+                .toList();
+
+        return TeamAnalyticsResponse.builder()
+                .team(team)
+                .teamName(team.name())
+                .summary(summary)
+                .monthlyHistory(monthlyHistory)
                 .build();
     }
 
