@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,11 +36,17 @@ public interface TicketRepository extends CrudRepository<Ticket, UUID> {
      * Busca todas as solicitações ativas (em andamento) no sistema.
      */
     @Query("SELECT * FROM ticket WHERE status = 'IN_PROGRESS' ORDER BY created_at ASC, ticket_number ASC")
-    java.util.List<Ticket> findAllActiveTickets();
+    List<Ticket> findAllActiveTickets();
 
     /**
      * Busca todas as solicitações em espera (pendentes) ordenadas por ordem de chegada (FIFO).
      */
     @Query("SELECT * FROM ticket WHERE status = 'PENDING' ORDER BY created_at ASC, ticket_number ASC")
-    java.util.List<Ticket> findAllWaitingTickets();
+    List<Ticket> findAllWaitingTickets();
+
+    /**
+     * Busca todos os tickets ordenados cronologicamente por data de criação.
+     */
+    @Query("SELECT * FROM ticket ORDER BY created_at ASC, ticket_number ASC")
+    List<Ticket> findAllOrderByCreatedAt();
 }

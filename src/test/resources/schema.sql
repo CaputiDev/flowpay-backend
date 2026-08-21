@@ -27,6 +27,11 @@ CREATE TABLE ticket (
     error_msg VARCHAR(255),
     created_at TIMESTAMP NOT NULL,
     finished_at TIMESTAMP,
+    started_at TIMESTAMP,
+    is_finished BOOLEAN DEFAULT FALSE NOT NULL,
+    waiting_time_seconds BIGINT DEFAULT 0,
+    service_time_seconds BIGINT DEFAULT 0,
+    total_time_seconds BIGINT DEFAULT 0,
     queue_id UUID REFERENCES queue(id),
     agent_id UUID REFERENCES agent(id),
     version BIGINT DEFAULT 0

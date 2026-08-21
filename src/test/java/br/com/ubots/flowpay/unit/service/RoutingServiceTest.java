@@ -6,6 +6,7 @@ import br.com.ubots.flowpay.dto.TicketResponse;
 import br.com.ubots.flowpay.exception.InvalidTicketStatusException;
 import br.com.ubots.flowpay.exception.TicketNotFoundException;
 import br.com.ubots.flowpay.model.Agent;
+import br.com.ubots.flowpay.model.Queue;
 import br.com.ubots.flowpay.model.Ticket;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
 import br.com.ubots.flowpay.model.enums.TeamEnum;
@@ -193,4 +194,30 @@ class RoutingServiceTest {
 
         assertThrows(InvalidTicketStatusException.class, () -> routingService.finishTicket(ticketId));
     }
+
+    @Test
+    @DisplayName("Deve salvar ticket com status REJECTED e lançar QueueFullException quando a fila atingir a capacidade máxima")
+    void shouldSaveRejectedTicketWhenQueueIsFull() {
+        UUID queueId = UUID.randomUUID();
+        Queue queue = Queue.builder().id(queueId).team(TeamEnum.CREDIT_CARDS).maxCapacity(3).build();
+
+        when(ticketRepository.existsByChatRefAndStatusIn(anyString(), any())).thenReturn(false);
+        when(queueRepository.findByTeam(TeamEnum.CREDIT_CARDS)).thenReturn(Optional.of(queue));
+        when(agentRepository.findAvailableAgentByTeam(TeamEnum.CREDIT_CARDS)).thenReturn(Optional.empty());
+        when(ticketRepository.countByQueueIdAndStatus(queueId, StatusEnum.PENDING)).thenReturn(3L);
+
+        assertThrows(br.com.ubots.flowpay.exception.QueueFullException.class, () ->
+                routingService.routeNewTicket("chat_overflow", "cartão de crédito")
+        );
+
+        ArgumentCaptor<Ticket> ticketCaptor = ArgumentCaptor.forClass(Ticket.class);
+        verify(ticketRepository).save(ticketCaptor.capture());
+
+        Ticket rejectedSaved = ticketCaptor.getValue();
+        assertEquals(StatusEnum.REJECTED, rejectedSaved.getStatus());
+        assertTrue(rejectedSaved.isFinished());
+        assertNotNull(rejectedSaved.getFinishedAt());
+        assertEquals("A fila atingiu a capacidade máxima. Solicitação recusada.", rejectedSaved.getErrorMsg());
+    }
 }
+

@@ -68,3 +68,15 @@ Accept: application/json
 ### 7. Rota Inexistente / Fallback 404 (Esperado: HTTP 404 NOT FOUND)
 GET http://localhost:8080/rota-que-nao-existe
 Accept: application/json
+
+###
+
+### 8. Analytics Mensal (Esperado: HTTP 200 OK)
+GET http://localhost:8080/v1/analytics/monthly
+Accept: application/json
+
+###
+
+### 9. Analytics Overview Global (Esperado: HTTP 200 OK)
+GET http://localhost:8080/v1/analytics/overview
+Accept: application/json

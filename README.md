@@ -128,6 +128,22 @@ target/site/jacoco/index.html
 
 ---
 
+### 5. Consultar Métricas Mensais e Histórico
+`GET /v1/analytics/monthly`
+
+**Respostas Possíveis:**
+- `200 OK`: Retorna as métricas agregadas agrupadas mês a mês (`YYYY-MM`), incluindo total de chamados, resolvidos, recusados (`REJECTED`), em andamento, em fila, tempos médios de espera (`avgWaitingTimeSeconds`), tempos médios de atendimento (`avgServiceTimeSeconds`) e detalhamento por equipe.
+
+---
+
+### 6. Consultar Resumo Geral de Analytics
+`GET /v1/analytics/overview`
+
+**Respostas Possíveis:**
+- `200 OK`: Retorna o sumário global com totais consolidados e médias de tempo de toda a vida da aplicação.
+
+---
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Linguagem & Framework:** Java 21 (LTS), Spring Boot 3.5.6

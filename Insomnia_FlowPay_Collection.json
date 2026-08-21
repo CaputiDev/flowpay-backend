@@ -118,6 +118,38 @@
       "parameters": [],
       "authentication": {},
       "metaSortKey": 300
+    },
+    {
+      "_id": "req_analytics_monthly",
+      "_type": "request",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/analytics/monthly",
+      "name": "Consultar Analytics Mensal",
+      "description": "Consulta as métricas consolidadas agrupadas por mês, médias de tempo de espera/atendimento e totais.",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 400
+    },
+    {
+      "_id": "req_analytics_overview",
+      "_type": "request",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/analytics/overview",
+      "name": "Consultar Analytics Overview Geral",
+      "description": "Consulta o sumário global de chamados criados, resolvidos, recusados e médias gerais de tempo.",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 500
     }
   ]
 }

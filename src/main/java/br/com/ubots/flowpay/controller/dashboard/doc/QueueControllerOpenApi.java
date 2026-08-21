@@ -1,4 +1,4 @@
-package br.com.ubots.flowpay.controller.doc;
+package br.com.ubots.flowpay.controller.dashboard.doc;
 
 import br.com.ubots.flowpay.dto.QueueStatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,10 +10,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 
 /**
- * Interface dedicada exclusivamente à documentação OpenAPI / Swagger do QueueController.
- * Mantém o Controller 100% limpo e desacoplado de anotações de documentação.
+ * Interface OpenAPI para o endpoint de status das filas no Dashboard.
  */
-@Tag(name = "Status das Filas", description = "Endpoints para consulta do estado em tempo real das filas e atendentes")
+@Tag(name = "Dashboard", description = "Endpoints operacionais: gestão de tickets, roteamento e estado das filas em tempo real")
 public interface QueueControllerOpenApi {
 
     @Operation(
