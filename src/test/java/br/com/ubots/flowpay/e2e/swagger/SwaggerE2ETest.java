@@ -38,4 +38,27 @@ class SwaggerE2ETest {
         mockMvc.perform(get("/swagger-ui.html"))
                 .andExpect(status().is3xxRedirection());
     }
+
+    @Test
+    @DisplayName("E2E: Deve retornar 200 OK no endpoint raiz '/' com healthcheck e link do swagger")
+    void shouldReturnHealthCheckOnRootEndpoint() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.message").value("FlowPay MVP API operacional"))
+                .andExpect(jsonPath("$.docs").value("/swagger-ui/index.html"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    @DisplayName("E2E: Deve retornar 404 Not Found com ErrorResponse estruturado ao acessar endpoint inexistente")
+    void shouldReturn404OnNonExistentEndpoint() throws Exception {
+        mockMvc.perform(get("/rota-totalmente-inexistente-12345"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.path").value("/rota-totalmente-inexistente-12345"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
 }
+

@@ -86,6 +86,38 @@
       "parameters": [],
       "authentication": {},
       "metaSortKey": 200
+    },
+    {
+      "_id": "req_root_healthcheck",
+      "_type": "request",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/",
+      "name": "Healthcheck & Docs Swagger",
+      "description": "Retorna o status de saúde da aplicação e a URL da documentação Swagger UI.",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 50
+    },
+    {
+      "_id": "req_queue_status",
+      "_type": "request",
+      "parentId": "wrk_flowpay_mvp",
+      "modified": 1723310000000,
+      "created": 1723310000000,
+      "url": "{{ _.base_url }}/v1/queues/status",
+      "name": "Consultar Estado Consolidado das Filas",
+      "description": "Consulta o snapshot em tempo real das filas ativas, pendentes e capacidade por equipe.",
+      "method": "GET",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 300
     }
   ]
 }

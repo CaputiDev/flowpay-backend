@@ -112,6 +112,22 @@ target/site/jacoco/index.html
 
 ---
 
+### 3. Consultar Estado Consolidado das Filas
+`GET /v1/queues/status`
+
+**Respostas Possíveis:**
+- `200 OK`: Retorna o snapshot em tempo real com filas ativas (`activeQueue`), fila de espera (`waitingQueue`) e resumo de capacidade por equipe (`teamSummaries`).
+
+---
+
+### 4. Healthcheck & Rota da Documentação
+`GET /`
+
+**Respostas Possíveis:**
+- `200 OK`: Retorna o status de saúde da aplicação (`status: "UP"`) e o caminho para a documentação Swagger UI (`docs: "/swagger-ui/index.html"`).
+
+---
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Linguagem & Framework:** Java 21 (LTS), Spring Boot 3.5.6

@@ -2,6 +2,12 @@
 ### SUÍTE DE TESTES DE INTEGRAÇÃO - FLOWPAY MVP
 ### ===================================================================
 
+### 0. Healthcheck & Swagger URL (Esperado: HTTP 200 OK)
+GET http://localhost:8080/
+Accept: application/json
+
+###
+
 ### 1. Happy Path: Atendente Livre (Esperado: HTTP 201 CREATED)
 POST http://localhost:8080/v1/tickets
 Content-Type: application/json
@@ -55,4 +61,10 @@ Content-Type: application/json
 
 ### 6. Consultar Estado Consolidado das Filas (Esperado: HTTP 200 OK)
 GET http://localhost:8080/v1/queues/status
+Accept: application/json
+
+###
+
+### 7. Rota Inexistente / Fallback 404 (Esperado: HTTP 404 NOT FOUND)
+GET http://localhost:8080/rota-que-nao-existe
 Accept: application/json
