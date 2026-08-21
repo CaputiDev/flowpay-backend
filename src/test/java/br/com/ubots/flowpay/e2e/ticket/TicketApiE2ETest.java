@@ -130,6 +130,16 @@ class TicketApiE2ETest {
                 .content(overflowPayload))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("A fila atingiu a capacidade máxima. Solicitação recusada."));
+
+        // Valida que o ticket recusado foi persistido com status REJECTED
+        var rejectedTicketList = ticketRepository.findAllOrderByCreatedAt().stream()
+                .filter(t -> "client_overflow".equals(t.getChatRef()))
+                .toList();
+        assertEquals(1, rejectedTicketList.size());
+        assertEquals("REJECTED", rejectedTicketList.get(0).getStatus().name());
+        assertTrue(rejectedTicketList.get(0).isFinished());
+        assertNotNull(rejectedTicketList.get(0).getFinishedAt());
+        assertEquals("A fila atingiu a capacidade máxima. Solicitação recusada.", rejectedTicketList.get(0).getErrorMsg());
     }
 
     @Test
@@ -353,4 +363,27 @@ class TicketApiE2ETest {
 
         assertEquals(2, totalLoad, "A carga somada da equipe de cartão de crédito deve ser 2");
     }
+
+    @Test
+    @DisplayName("E2E: Deve expor /v1/analytics/monthly e /v1/analytics/overview com dados consolidados")
+    void shouldExposeAnalyticsEndpoints() throws Exception {
+        routingService.routeNewTicket("client_analytics_1", "Problema com cartão");
+        TicketResponse ticket2 = routingService.routeNewTicket("client_analytics_2", "Simular empréstimo");
+        routingService.finishTicket(ticket2.getId());
+
+        mockMvc.perform(get("/v1/analytics/monthly"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.overallSummary.totalTickets").value(2))
+                .andExpect(jsonPath("$.overallSummary.totalResolved").value(1))
+                .andExpect(jsonPath("$.overallSummary.totalInProgress").value(1))
+                .andExpect(jsonPath("$.monthlyMetrics").isArray())
+                .andExpect(jsonPath("$.monthlyMetrics[0].totalTickets").value(2));
+
+        mockMvc.perform(get("/v1/analytics/overview"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalTickets").value(2))
+                .andExpect(jsonPath("$.totalResolved").value(1))
+                .andExpect(jsonPath("$.totalInProgress").value(1));
+    }
 }
+

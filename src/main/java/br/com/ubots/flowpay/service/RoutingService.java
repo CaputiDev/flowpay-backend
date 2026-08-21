@@ -47,7 +47,7 @@ public class RoutingService {
             maxAttempts = 5,
             backoff = @Backoff(delay = 100)
     )
-    @Transactional
+    @Transactional(noRollbackFor = QueueFullException.class)
     public TicketResponse routeNewTicket(String chatRef, String subject) {
 
         // Trava de Idempotência
@@ -140,7 +140,11 @@ public class RoutingService {
         long pendingCount = ticketRepository.countByQueueIdAndStatus(queue.getId(), StatusEnum.PENDING);
 
         if (pendingCount >= queue.getMaxCapacity()) {
-            throw new QueueFullException("A fila atingiu a capacidade máxima. Solicitação recusada.");
+            String errorMsg = "A fila atingiu a capacidade máxima. Solicitação recusada.";
+            Ticket rejectedTicket = Ticket.createRejected(chatRef, subject, queue.getId(), errorMsg);
+            ticketRepository.save(rejectedTicket);
+            log.warn("Capacidade máxima da fila {} atingida. Ticket recusado e salvo com status REJECTED para o chatRef {}", queue.getTeam(), chatRef);
+            throw new QueueFullException(errorMsg);
         }
 
         Ticket ticket = Ticket.createForQueue(chatRef, subject, queue.getId(), StatusEnum.PENDING);

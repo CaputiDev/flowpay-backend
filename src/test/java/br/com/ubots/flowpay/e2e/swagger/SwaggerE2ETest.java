@@ -29,7 +29,9 @@ class SwaggerE2ETest {
                 .andExpect(jsonPath("$.info.title").value("FlowPay MVP - Sistema de Roteamento de Atendimento"))
                 .andExpect(jsonPath("$.info.version").value("1.0.0"))
                 .andExpect(jsonPath("$.paths['/v1/tickets']").exists())
-                .andExpect(jsonPath("$.paths['/v1/tickets/{id}/finish']").exists());
+                .andExpect(jsonPath("$.paths['/v1/tickets/{id}/finish']").exists())
+                .andExpect(jsonPath("$.paths['/v1/analytics/monthly']").exists())
+                .andExpect(jsonPath("$.paths['/v1/analytics/overview']").exists());
     }
 
     @Test

@@ -1,6 +1,6 @@
-package br.com.ubots.flowpay.unit.controller;
+package br.com.ubots.flowpay.unit.controller.dashboard;
 
-import br.com.ubots.flowpay.controller.QueueController;
+import br.com.ubots.flowpay.controller.dashboard.QueueController;
 import br.com.ubots.flowpay.dto.QueueStatusResponse;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
 import br.com.ubots.flowpay.model.enums.TeamEnum;

@@ -1,6 +1,6 @@
-package br.com.ubots.flowpay.controller;
+package br.com.ubots.flowpay.controller.dashboard;
 
-import br.com.ubots.flowpay.controller.doc.TicketControllerOpenApi;
+import br.com.ubots.flowpay.controller.dashboard.doc.TicketControllerOpenApi;
 import br.com.ubots.flowpay.dto.TicketRequest;
 import br.com.ubots.flowpay.dto.TicketResponse;
 import br.com.ubots.flowpay.service.RoutingService;
@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+/**
+ * Controller responsável pelos endpoints operacionais de criação e encerramento de tickets do Dashboard.
+ */
 @RestController
 @RequestMapping("/v1/tickets")
 @RequiredArgsConstructor
@@ -19,9 +22,6 @@ public class TicketController implements TicketControllerOpenApi {
 
     private final RoutingService routingService;
 
-    /**
-     * Endpoint para criação e roteamento de novas solicitações de atendimento.
-     */
     @Override
     @PostMapping
     public ResponseEntity<TicketResponse> createTicket(@RequestBody @Valid TicketRequest request) {
@@ -35,9 +35,6 @@ public class TicketController implements TicketControllerOpenApi {
         };
     }
 
-    /**
-     * Endpoint para finalização de um atendimento atual, liberando a vaga do atendente.
-     */
     @Override
     @PatchMapping("/{id}/finish")
     public ResponseEntity<TicketResponse> finishTicket(@PathVariable UUID id) {

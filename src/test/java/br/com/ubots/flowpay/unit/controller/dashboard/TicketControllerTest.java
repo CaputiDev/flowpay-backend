@@ -1,6 +1,6 @@
-package br.com.ubots.flowpay.unit.controller;
+package br.com.ubots.flowpay.unit.controller.dashboard;
 
-import br.com.ubots.flowpay.controller.TicketController;
+import br.com.ubots.flowpay.controller.dashboard.TicketController;
 import br.com.ubots.flowpay.dto.TicketResponse;
 import br.com.ubots.flowpay.model.enums.StatusEnum;
 import br.com.ubots.flowpay.service.RoutingService;
@@ -39,11 +39,17 @@ class TicketControllerTest {
     @Test
     @DisplayName("Controller: Deve retornar 201 Created quando o ticket for criado e atribuído")
     void shouldReturn201WhenTicketIsCreated() throws Exception {
-        TicketResponse response = new TicketResponse(
-                UUID.randomUUID(), 1L, "chat_123", "Assunto",
-                StatusEnum.IN_PROGRESS, null, LocalDateTime.now(), null,
-                UUID.randomUUID(), UUID.randomUUID()
-        );
+        TicketResponse response = TicketResponse.builder()
+                .id(UUID.randomUUID())
+                .ticketNumber(1L)
+                .chatRef("chat_123")
+                .subject("Assunto")
+                .status(StatusEnum.IN_PROGRESS)
+                .createdAt(LocalDateTime.now())
+                .startedAt(LocalDateTime.now())
+                .queueId(UUID.randomUUID())
+                .agentId(UUID.randomUUID())
+                .build();
 
         when(routingService.routeNewTicket(anyString(), anyString())).thenReturn(response);
 
@@ -65,11 +71,15 @@ class TicketControllerTest {
     @Test
     @DisplayName("Controller: Deve retornar 202 Accepted quando o ticket for enviado para a fila")
     void shouldReturn202WhenTicketIsEnqueued() throws Exception {
-        TicketResponse response = new TicketResponse(
-                UUID.randomUUID(), 2L, "chat_456", "Assunto Fila",
-                StatusEnum.PENDING, null, LocalDateTime.now(), null,
-                UUID.randomUUID(), null
-        );
+        TicketResponse response = TicketResponse.builder()
+                .id(UUID.randomUUID())
+                .ticketNumber(2L)
+                .chatRef("chat_456")
+                .subject("Assunto Fila")
+                .status(StatusEnum.PENDING)
+                .createdAt(LocalDateTime.now())
+                .queueId(UUID.randomUUID())
+                .build();
 
         when(routingService.routeNewTicket(anyString(), anyString())).thenReturn(response);
 
@@ -91,11 +101,18 @@ class TicketControllerTest {
     @DisplayName("Controller: Deve retornar 200 OK quando finalizar ticket")
     void shouldReturn200WhenTicketIsFinished() throws Exception {
         UUID ticketId = UUID.randomUUID();
-        TicketResponse response = new TicketResponse(
-                ticketId, 1L, "chat_123", "Assunto",
-                StatusEnum.RESOLVED, null, LocalDateTime.now(), LocalDateTime.now(),
-                UUID.randomUUID(), UUID.randomUUID()
-        );
+        TicketResponse response = TicketResponse.builder()
+                .id(ticketId)
+                .ticketNumber(1L)
+                .chatRef("chat_123")
+                .subject("Assunto")
+                .status(StatusEnum.RESOLVED)
+                .createdAt(LocalDateTime.now())
+                .finishedAt(LocalDateTime.now())
+                .isFinished(true)
+                .queueId(UUID.randomUUID())
+                .agentId(UUID.randomUUID())
+                .build();
 
         when(routingService.finishTicket(eq(ticketId))).thenReturn(response);
 

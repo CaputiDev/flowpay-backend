@@ -1,138 +1,112 @@
-# 💳 FlowPay — Engine Inteligente de Roteamento de Atendimento (MVP)
+# 💳 FlowPay - Engine Inteligente de Roteamento de Atendimento (MVP)
 
-> **Elevator Pitch:** O **FlowPay** é um motor de roteamento inteligente de chamados de clientes projetado para alta disponibilidade e resiliência. Ele protege a saúde mental dos atendentes e garante a satisfação do cliente através de distribuição inteligente por times e filas sequenciais FIFO sem perda de dados.
-
----
-
-## 🏛️ Decisões de Arquitetura & Design (ADR - Architecture Decision Records)
-
-Para garantir máxima performance, manutenibilidade e resiliência sob concorrência intensa, adotamos as seguintes decisões técnicas:
-
-1. **Lock Otimista (`@Version`) + Spring Retry (`@Retryable`)**:
-   - **Motivo:** Em vez de travar o banco de dados com *Locks Pessimistas* (que geram gargalos de IO e deadlocks sob alta carga), utilizamos *Lock Otimista* com `@Version` no Spring Data JDBC acoplado ao Spring Retry (`@Retryable`). Se duas solicitações tentarem atribuir o mesmo atendente simultaneamente, o sistema tenta novamente automaticamente em milissegundos com backoff, garantindo consistência sem onerar a infraestrutura de dados.
-2. **Strategy Pattern para Classificação de Assuntos (`SubjectClassifier`)**:
-   - **Motivo:** Permite adicionar novos classificadores de temas (ex: *Fraudes*, *Pix*) simplesmente criando uma nova classe anotada com `@Component`, sem alterar o código do serviço principal (*Open/Closed Principle* do SOLID).
-3. **Padrão DTO de Saída (`TicketResponse`)**:
-   - **Motivo:** Evita o anti-pattern de *Leaking Database Entity*, blindando o modelo interno do banco (`Ticket`) de vazamentos de versão de lock, chaves internas ou dados sensíveis para o cliente HTTP.
-4. **Clean OpenAPI Documentation via Interfaces (`TicketControllerOpenApi`)**:
-   - **Motivo:** Toda a documentação Swagger está contida em uma interface separada de contrato, mantendo os Controllers 100% limpos e focados exclusivamente na camada Web.
+> **FlowPay** é um motor inteligente e resiliente de roteamento e distribuição de chamados de atendimento ao cliente para operações financeiras. O sistema resolve o problema de sobrecarga operacional, gargalos de distribuição e perda de chamados através de balanceamento automático de carga por times especializados, filas sequenciais FIFO com capacidade controlada e mecanismos robustos de concorrência.
 
 ---
 
-## ⚡ Quick Start / Developer Experience (DX)
+## ✨ Funcionalidades (Features)
 
-Todos os comandos abaixo são **Copy & Paste Friendly**. Você pode rodar a aplicação em menos de 1 minuto!
-
-### Opção 1: Execução Completa via Docker Compose (PostgreSQL + App)
-
-```bash
-docker-compose up -d --build
-```
-
-> **Acesse no navegador:**
-> - **Swagger UI (Documentação Interativa):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-> - **OpenAPI v3 JSON Spec:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
-
----
-
-### Opção 2: Execução Rápida para Desenvolvimento (H2 em Memória)
-
-Se você já possui o Java 21 instalado e quer testar a aplicação imediatamente em ambiente isolado:
-
-#### Windows (PowerShell / CMD)
-```cmd
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=test"
-```
-
-#### Linux / macOS
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=test
-```
-
----
-
-## 🧪 Suíte de Testes Automatizados & Cobertura
-
-O projeto possui **45+ testes automatizados** divididos em uma estrutura hierárquica clara (`unit/`, `integration/`, `e2e/`).
-
-### Rodar Todos os Testes
-```bash
-.\mvnw.cmd test
-```
-
-### Relatório de Cobertura de Código (JaCoCo)
-Após rodar os testes, o relatório de cobertura em formato HTML é gerado automaticamente em:
-```text
-target/site/jacoco/index.html
-```
-
----
-
-## 📋 Regras de Negócio Implementadas
-
-| Regra | Descrição |
-| :--- | :--- |
-| **RN01 - Capacidade Máxima** | Cada atendente lida com no máximo **3 solicitações ativas** simultâneas. |
-| **RN02 - Exclusividade de Time** | Cada atendente pertence a apenas um time (*Cartões*, *Empréstimos* ou *Outros Assuntos*). |
-| **RN03 - Fila FIFO** | Chamados excedentes aguardam em fila respeitando a ordem cronológica de chegada (*First In, First Out*). |
-| **RN04 - Quadro Estático** | 9 atendentes fixos (3 para Cartões, 3 para Empréstimos e 3 para Outros Assuntos). |
-| **RN05 - Limite da Fila** | Capacidade máxima inflexível de **3 solicitações aguardando na fila por time**. O 4º excedente (13º do time) é recusado com HTTP 422. |
-
----
-
-## 🔌 Principais Endpoints da API REST
-
-### 1. Criar e Rotear Solicitação
-`POST /v1/tickets`
-
-**Payload de Requisição:**
-```json
-{
-  "chatRef": "whatsapp_555199999911",
-  "subject": "Preciso de ajuda com limite do meu cartão de crédito"
-}
-```
-
-**Respostas Possíveis:**
-- `201 Created`: Atribuído diretamente a um atendente livre (`status: IN_PROGRESS`).
-- `202 Accepted`: Atendentes lotados; enviado para a fila de espera (`status: PENDING`).
-- `400 Bad Request`: JSON malformado ou campos vazios.
-- `409 Conflict`: Solicitação ativa já existente para o mesmo `chatRef` ou conflito de concorrência.
-- `422 Unprocessable Entity`: Capacidade máxima da fila atingida (13ª solicitação do time).
-
----
-
-### 2. Finalizar Atendimento
-`PATCH /v1/tickets/{id}/finish`
-
-**Respostas Possíveis:**
-- `200 OK`: Solicitação encerrada (`status: RESOLVED`). Atendente é liberado e a solicitação pendente mais antiga da fila (FIFO) é automaticamente reatribuída.
-- `404 Not Found`: ID da solicitação não encontrado.
-- `422 Unprocessable Entity`: Solicitação não se encontra em andamento.
-
----
-
-### 3. Consultar Estado Consolidado das Filas
-`GET /v1/queues/status`
-
-**Respostas Possíveis:**
-- `200 OK`: Retorna o snapshot em tempo real com filas ativas (`activeQueue`), fila de espera (`waitingQueue`) e resumo de capacidade por equipe (`teamSummaries`).
-
----
-
-### 4. Healthcheck & Rota da Documentação
-`GET /`
-
-**Respostas Possíveis:**
-- `200 OK`: Retorna o status de saúde da aplicação (`status: "UP"`) e o caminho para a documentação Swagger UI (`docs: "/swagger-ui/index.html"`).
+- 🎯 **Roteamento Inteligente por Assunto (Strategy Pattern):** Classificação automática de solicitações para os times responsáveis (*Cartões*, *Empréstimos* ou *Outros Assuntos*).
+- ⚖️ **Balanceamento e Limite de Carga (Workload Cap):** Controle estrito de no máximo 3 atendimentos simultâneos por atendente para garantir qualidade e evitar sobrecarga.
+- ⏳ **Filas Sequenciais FIFO com Backpressure:** Enfileiramento ordenado por tempo de chegada quando todos os operadores estão ocupados, com teto de fila (máximo 3 pendentes por time) e recusa explícita com HTTP 422 ao exceder.
+- 🔄 **Deslocamento e Atribuição Automática:** Ao finalizar um chamado (`PATCH /v1/tickets/{id}/finish`), o operador liberado recebe instantaneamente o próximo chamado mais antigo da fila.
+- 🛡️ **Resiliência e Concorrência Segura:** Uso de Lock Otimista (`@Version`) combinado com Spring Retry (`@Retryable`) com backoff automático, prevenindo deadlocks e race conditions.
+- 📊 **Monitoramento & Analytics em Tempo Real:** Endpoints dedicados para consulta do snapshot operacional das filas (`/v1/queues/status`), resumo global (`/v1/analytics/overview`) e histórico mensal consolidado (`/v1/analytics/monthly`).
+- 📖 **Documentação de Contrato Desacoplada (Clean OpenAPI):** Swagger UI integrado com interfaces desacopladas dos controllers para documentação viva da API.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Linguagem & Framework:** Java 21 (LTS), Spring Boot 3.5.6
-- **Persistência:** Spring Data JDBC, PostgreSQL (Produção), H2 Database (Testes/Dev)
-- **Migrations:** Flyway Database Migrations
-- **Resiliência:** Spring Retry, Lock Otimista (`@Version`)
-- **Documentação:** SpringDoc OpenAPI 3 (Swagger UI)
-- **Testes & Qualidade:** JUnit 5, Mockito, MockMvc, JaCoCo Coverage Plugin, Testcontainers
+- **Linguagem:** [Java 21 (LTS)](https://www.oracle.com/java/technologies/downloads/#java21)
+- **Framework:** [Spring Boot 3.5.6](https://spring.io/projects/spring-boot) (Spring Web, Spring Data JDBC, Spring Validation, Spring Retry, Spring AOP)
+- **Banco de Dados:** [PostgreSQL 16](https://www.postgresql.org/) (Produção / Docker) e [H2 Database](https://www.h2database.com/) (Ambiente de Testes / Dev)
+- **Database Migrations:** [Flyway 11.7.2](https://flywaydb.org/)
+- **Documentação da API:** [SpringDoc OpenAPI 3 / Swagger UI 2.8.5](https://springdoc.org/)
+- **Testes & Qualidade:** [JUnit 5](https://junit.org/junit5/), [Mockito](https://site.mockito.org/), [Testcontainers](https://testcontainers.com/), [JaCoCo 0.8.12](https://www.jacoco.org/jacoco/)
+- **Containerização:** [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+- **Produtividade:** [Lombok](https://projectlombok.org/)
+
+---
+
+## 📋 Pré-requisitos
+
+Antes de iniciar, certifique-se de ter instalado em sua máquina:
+
+- [Git](https://git-scm.com/)
+- [Java Development Kit (JDK) 21+](https://adoptium.net/) *(necessário para execução local sem Docker)*
+- [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/install/) *(recomendado para ambiente completo)*
+
+---
+
+## 🚀 Instalação e Execução
+
+### 1. Clonar o Repositório
+
+```bash
+git clone https://github.com/CaputiDev/flowpay-mvp.git
+cd flowpay-mvp
+```
+
+### 2. Configurar Variáveis de Ambiente (Opcional)
+
+O projeto já possui valores padrão funcionais, mas você pode criar seu arquivo `.env` baseado no exemplo:
+
+```bash
+# Linux / macOS
+cp .env.example .env
+
+# Windows (PowerShell)
+Copy-Item .env.example .env
+```
+
+---
+
+### 3. Executar a Aplicação
+
+Escolha uma das opções abaixo:
+
+#### Opção A: Execução via Docker Compose (Recomendado - App + PostgreSQL)
+
+Executa a aplicação compilada junto ao banco PostgreSQL e migrations automáticas do Flyway:
+
+```bash
+docker-compose up -d --build
+```
+
+#### Opção B: Execução Local com Maven Wrapper (Perfil de Teste / H2 em Memória)
+
+Ideal para desenvolvimento ágil sem necessidade de subir containers:
+
+```bash
+# Windows (PowerShell / CMD)
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=test"
+
+# Linux / macOS
+./mvnw spring-boot:run -Dspring-boot.run.profiles=test
+```
+
+---
+
+### 4. Executar Testes Automatizados
+
+O projeto conta com testes unitários, integrados e de ponta a ponta:
+
+```bash
+# Windows
+.\mvnw.cmd clean test
+
+# Linux / macOS
+./mvnw clean test
+```
+
+> 📈 **Relatório de Cobertura JaCoCo:** Após os testes, visualize o relatório abrindo `target/site/jacoco/index.html` no navegador.
+
+---
+
+## 💡 Como Usar
+
+Com a aplicação em execução (`http://localhost:8080`), acesse a documentação interativa ou utilize os exemplos abaixo:
+
+- **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI Spec (JSON):** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
