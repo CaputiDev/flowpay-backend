@@ -1,9 +1,5 @@
 # 💳 FlowPay - Engine Inteligente de Roteamento de Atendimento (MVP)
 
-> **FlowPay** é um motor inteligente e resiliente de roteamento e distribuição de chamados de atendimento ao cliente para operações financeiras. O sistema resolve o problema de sobrecarga operacional, gargalos de distribuição e perda de chamados através de balanceamento automático de carga por times especializados, filas sequenciais FIFO com capacidade controlada e mecanismos robustos de concorrência.
-
----
-
 ## ✨ Funcionalidades (Features)
 
 - 🎯 **Roteamento Inteligente por Assunto (Strategy Pattern):** Classificação automática de solicitações para os times responsáveis (*Cartões*, *Empréstimos* ou *Outros Assuntos*).
@@ -62,28 +58,14 @@ Copy-Item .env.example .env
 
 ---
 
-### 3. Executar a Aplicação
+### 3. Executar a Aplicação Localmente
 
-Escolha uma das opções abaixo:
-
-#### Opção A: Execução via Docker Compose (Recomendado - App + PostgreSQL)
+#### Execução via Docker Compose (Recomendado - App + PostgreSQL)
 
 Executa a aplicação compilada junto ao banco PostgreSQL e migrations automáticas do Flyway:
 
 ```bash
 docker-compose up -d --build
-```
-
-#### Opção B: Execução Local com Maven Wrapper (Perfil de Teste / H2 em Memória)
-
-Ideal para desenvolvimento ágil sem necessidade de subir containers:
-
-```bash
-# Windows (PowerShell / CMD)
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=test"
-
-# Linux / macOS
-./mvnw spring-boot:run -Dspring-boot.run.profiles=test
 ```
 
 ---
@@ -112,19 +94,3 @@ Com a aplicação em execução (`http://localhost:8080`), acesse a documentaç�
 - **OpenAPI Spec (JSON):** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
 ---
-
-## 🔌 Principais Endpoints da API REST
-
-### 📊 Dashboard Operacional
-- `POST /v1/tickets`: Recebe e roteia nova solicitação de atendimento (201 Atribuído, 202 Na fila, 422 Recusado por fila cheia).
-- `PATCH /v1/tickets/{id}/finish`: Encerra o chamado (200 RESOLVED) e puxa o próximo da fila FIFO.
-- `GET /v1/queues/status`: Snapshot em tempo real das filas ativas, fila de espera e capacidade dos operadores.
-
-### 📈 Analytics & Relatórios
-- `GET /v1/analytics/monthly`: Métricas consolidadas agrupadas mês a mês com médias de tempo e SLA.
-- `GET /v1/analytics/overview`: Sumário global de toda a vida da aplicação.
-- `GET /v1/analytics/teams`: Métricas e histórico mensal consolidado de todas as equipes.
-- `GET /v1/analytics/teams/{team}`: Métricas analíticas exclusivas de uma equipe (`CREDIT_CARDS`, `LOANS`, `OTHERS`).
-
-### 🩺 Health Check
-- `GET /`: Health check da aplicação com link para a documentação Swagger UI.
