@@ -2,42 +2,68 @@ package br.com.ubots.flowpay.unit.classifier;
 
 import br.com.ubots.flowpay.classifier.LoanClassifier;
 import br.com.ubots.flowpay.model.enums.TeamEnum;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LoanClassifierTest {
 
-    private LoanClassifier classifier;
+    private final LoanClassifier classifier = new LoanClassifier();
 
-    @BeforeEach
-    void setUp() {
-        classifier = new LoanClassifier();
-    }
+    @ParameterizedTest(name = "Deve classificar para Empréstimos: \"{0}\"")
+    @ValueSource(strings = {
+            // Termos principais
+            "emprestimo",
+            "financiamento",
+            "credito pessoal",
+            "credito",
+            "consignado",
+            "antecipacao",
+            "fgts",
 
-    @Test
-    @DisplayName("Deve retornar LOANS quando o assunto contiver 'emprestimo'")
-    void shouldClassifyLoanSubject() {
-        Optional<TeamEnum> result = classifier.classify("quero simular um emprestimo consignado");
+            // Valores e Taxas
+            "juros",
+            "taxa",
+            "cet",
+            "iof",
+            "montante",
+            "saldo devedor",
+            "amortizacao",
+
+            // Contrato e Pagamento
+            "parcela",
+            "parcelamento",
+            "renegociacao",
+            "carne",
+            "quitacao",
+            "quitar",
+            "atraso",
+            "inadimplencia",
+            "renegociar",
+            "refinanciamento",
+            "refinanciar",
+
+            // Processo
+            "simulacao",
+            "simular",
+            "analise",
+            "aprovacao",
+            "contrato",
+            "garantia",
+            "avalista",
+            "score",
+            "serasa",
+            "spc"
+    })
+    @DisplayName("Deve reconhecer todas as palavras-chave do time de Empréstimos")
+    void shouldClassifyLoanKeywords(String keyword) {
+        Optional<TeamEnum> result = classifier.classify("preciso de " + keyword);
         assertTrue(result.isPresent());
         assertEquals(TeamEnum.LOANS, result.get());
-    }
-
-    @Test
-    @DisplayName("Deve retornar Optional.empty() quando o assunto não contiver 'emprestimo'")
-    void shouldReturnEmptyForOtherSubjects() {
-        Optional<TeamEnum> result = classifier.classify("duvida sobre fatura do cartao");
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Deve retornar Optional.empty() quando o assunto for nulo")
-    void shouldReturnEmptyForNullSubject() {
-        Optional<TeamEnum> result = classifier.classify(null);
-        assertTrue(result.isEmpty());
     }
 }

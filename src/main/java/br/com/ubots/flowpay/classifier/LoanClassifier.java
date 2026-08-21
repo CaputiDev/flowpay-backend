@@ -5,6 +5,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Classificador responsável por identificar solicitações referentes à equipe de Empréstimos.
@@ -13,9 +14,19 @@ import java.util.Optional;
 @Order(2)
 public class LoanClassifier implements SubjectClassifier {
 
+    private static final Pattern LOAN_PATTERN = Pattern.compile(
+            "\\b("
+            + "emprestimo|emprestimos|financiamento|financiamentos|credito pessoal|credito|consignado|antecipacao|fgts|"
+            + "juros|taxa|taxas|cet|iof|montante|saldo devedor|amortizacao|"
+            + "parcela|parcelas|parcelamento|renegociacao|carne|quitacao|quitar|atraso|inadimplencia|renegociar|refinanciamento|refinanciar|"
+            + "simulacao|simular|analise|aprovacao|contrato|garantia|avalista|score|serasa|spc"
+            + ")\\b",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+    );
+
     @Override
     public Optional<TeamEnum> classify(String normalizedSubject) {
-        if (normalizedSubject != null && normalizedSubject.contains("emprestimo")) {
+        if (normalizedSubject != null && LOAN_PATTERN.matcher(normalizedSubject).find()) {
             return Optional.of(TeamEnum.LOANS);
         }
         return Optional.empty();
