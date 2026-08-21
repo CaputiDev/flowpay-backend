@@ -6,10 +6,10 @@
 --
 -- Como executar:
 -- 1. Via Docker:
---    docker exec -i flowpay-postgres psql -U postgres -d flowpay < seed_historical_tickets.sql
+--    docker exec -i flowpay-postgres psql -U postgres -d flowpay_db < seed_historical_tickets.sql
 -- 2. Via psql direto:
---    psql -h localhost -p 5432 -U postgres -d flowpay -f seed_historical_tickets.sql
--- 3. Ou copiando e colando no DBeaver / pgAdmin / DataGrip.
+--    psql -h localhost -p 5432 -U postgres -d flowpay_db -f seed_historical_tickets.sql
+-- 3. Ou copiando e colando no DBeaver / pgAdmin / DataGrip conectado ao banco 'flowpay_db'.
 -- ==============================================================================
 
 BEGIN;
