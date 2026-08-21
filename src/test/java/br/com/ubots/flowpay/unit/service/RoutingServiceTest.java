@@ -55,23 +55,46 @@ class RoutingServiceTest {
     }
 
     @Test
-    @DisplayName("Deve rotear para time de Cartões de Crédito quando assunto contiver a palavra cartão")
-    void shouldRouteToCreditCardsWhenSubjectContainsCartao() {
+    @DisplayName("Deve rotear para Cartões quando assunto contiver termos de cartões, faturas, segurança ou benefícios")
+    void shouldRouteToCreditCardsWhenSubjectContainsCardKeywords() {
         assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("Preciso de ajuda com meu CARTÃO de crédito"));
-        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("cartao"));
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("segunda via da fatura"));
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("solicitar 2ª via"));
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("bloqueio por clonagem"));
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("pontos e cashback do programa de fidelidade"));
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("qual o meu CVC e código de barras"));
     }
 
     @Test
-    @DisplayName("Deve rotear para time de Empréstimos quando assunto contiver a palavra empréstimo")
-    void shouldRouteToLoansWhenSubjectContainsEmprestimo() {
-        assertEquals(TeamEnum.LOANS, routingService.determineTeam("Quero um empréstimo agora"));
+    @DisplayName("Deve rotear para Empréstimos quando assunto contiver termos de crédito, financiamento, taxas ou quitação")
+    void shouldRouteToLoansWhenSubjectContainsLoanKeywords() {
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("Quero um empréstimo consignado"));
         assertEquals(TeamEnum.LOANS, routingService.determineTeam("EMPRÉSTIMO"));
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("simular financiamento"));
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("quitar parcelamento em atraso"));
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("renegociar dívida no Serasa e SPC"));
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("qual a taxa de juros e CET"));
     }
 
     @Test
-    @DisplayName("Deve rotear para time Outros quando assunto for genérico ou vazio")
+    @DisplayName("Deve desambiguar a palavra crédito: 'cartão de crédito' vai para Cartões, apenas 'crédito' ou 'crédito pessoal' vai para Empréstimos")
+    void shouldDisambiguateCreditoProperly() {
+        // Cartão de crédito -> CREDIT_CARDS
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("Quero pedir um cartão de crédito"));
+        assertEquals(TeamEnum.CREDIT_CARDS, routingService.determineTeam("Limite do cartão de crédito"));
+
+        // Apenas crédito ou crédito pessoal -> LOANS
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("Quero solicitar crédito pessoal"));
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("Preciso de crédito urgente"));
+        assertEquals(TeamEnum.LOANS, routingService.determineTeam("Linha de crédito"));
+    }
+
+    @Test
+    @DisplayName("Deve rotear para time Outros quando assunto for genérico, não identificado ou vazio")
     void shouldRouteToOthersWhenSubjectIsGenericOrEmpty() {
-        assertEquals(TeamEnum.OTHERS, routingService.determineTeam("Falar com humano"));
+        assertEquals(TeamEnum.OTHERS, routingService.determineTeam("Falar com atendente humano"));
+        assertEquals(TeamEnum.OTHERS, routingService.determineTeam("Horário de funcionamento da agência"));
+        assertEquals(TeamEnum.OTHERS, routingService.determineTeam("Bom dia"));
         assertEquals(TeamEnum.OTHERS, routingService.determineTeam("   "));
         assertEquals(TeamEnum.OTHERS, routingService.determineTeam(null));
     }

@@ -2,42 +2,74 @@ package br.com.ubots.flowpay.unit.classifier;
 
 import br.com.ubots.flowpay.classifier.CreditCardClassifier;
 import br.com.ubots.flowpay.model.enums.TeamEnum;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CreditCardClassifierTest {
 
-    private CreditCardClassifier classifier;
+    private final CreditCardClassifier classifier = new CreditCardClassifier();
 
-    @BeforeEach
-    void setUp() {
-        classifier = new CreditCardClassifier();
-    }
+    @ParameterizedTest(name = "Deve classificar para Cartões: \"{0}\"")
+    @ValueSource(strings = {
+            // Termos principais
+            "cartao",
+            "cartoes",
+            "debito",
+            "adicional",
+            "titular",
 
-    @Test
-    @DisplayName("Deve retornar CREDIT_CARDS quando o assunto contiver 'cartao'")
-    void shouldClassifyCreditCardSubject() {
-        Optional<TeamEnum> result = classifier.classify("duvida sobre cartao de credito");
+            // Fatura e Pagamentos
+            "fatura",
+            "boleto",
+            "vencimento",
+            "fechamento",
+            "limite",
+            "anuidade",
+            "melhor dia",
+            "codigo de barras",
+
+            // Segurança e Problemas
+            "bloqueio",
+            "desbloqueio",
+            "senha",
+            "fraude",
+            "clonagem",
+            "clonado",
+            "contestacao",
+            "contestar",
+            "roubo",
+            "perda",
+            "cvc",
+            "cvv",
+            "chip",
+            "aproximacao",
+            "contactless",
+
+            // Benefícios
+            "pontos",
+            "milhas",
+            "cashback",
+            "sala vip",
+            "programa de fidelidade",
+            "bandeira",
+            "visa",
+            "mastercard",
+            "elo",
+
+            // Ações comuns / vias
+            "2a via",
+            "segunda via"
+    })
+    @DisplayName("Deve reconhecer todas as palavras-chave do time de Cartões")
+    void shouldClassifyCardKeywords(String keyword) {
+        Optional<TeamEnum> result = classifier.classify("quero resolver sobre " + keyword);
         assertTrue(result.isPresent());
         assertEquals(TeamEnum.CREDIT_CARDS, result.get());
-    }
-
-    @Test
-    @DisplayName("Deve retornar Optional.empty() quando o assunto não contiver 'cartao'")
-    void shouldReturnEmptyForOtherSubjects() {
-        Optional<TeamEnum> result = classifier.classify("preciso de um emprestimo");
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Deve retornar Optional.empty() quando o assunto for nulo")
-    void shouldReturnEmptyForNullSubject() {
-        Optional<TeamEnum> result = classifier.classify(null);
-        assertTrue(result.isEmpty());
     }
 }

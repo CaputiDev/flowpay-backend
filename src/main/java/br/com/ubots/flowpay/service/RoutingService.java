@@ -173,8 +173,12 @@ public class RoutingService {
         return TeamEnum.OTHERS;
     }
 
-    private String normalizeText(String text) {
-        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
+    public String normalizeText(String text) {
+        if (text == null) {
+            return "";
+        }
+        String replaced = text.replace("ª", "a").replace("º", "o");
+        String normalized = Normalizer.normalize(replaced, Normalizer.Form.NFD);
         Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
         String textWithoutAccents = pattern.matcher(normalized).replaceAll("");
         return textWithoutAccents.toLowerCase().trim();
