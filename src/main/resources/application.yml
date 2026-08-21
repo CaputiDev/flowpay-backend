@@ -12,3 +12,10 @@ spring:
   sql:
     init:
       mode: never
+
+flowpay:
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    capacity: ${RATE_LIMIT_CAPACITY:150}
+    refill-tokens: ${RATE_LIMIT_REFILL_TOKENS:120}
+    refill-duration-seconds: ${RATE_LIMIT_REFILL_DURATION_SECONDS:60}
