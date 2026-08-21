@@ -31,7 +31,9 @@ class SwaggerE2ETest {
                 .andExpect(jsonPath("$.paths['/v1/tickets']").exists())
                 .andExpect(jsonPath("$.paths['/v1/tickets/{id}/finish']").exists())
                 .andExpect(jsonPath("$.paths['/v1/analytics/monthly']").exists())
-                .andExpect(jsonPath("$.paths['/v1/analytics/overview']").exists());
+                .andExpect(jsonPath("$.paths['/v1/analytics/overview']").exists())
+                .andExpect(jsonPath("$.paths['/v1/analytics/teams']").exists())
+                .andExpect(jsonPath("$.paths['/v1/analytics/teams/{team}']").exists());
     }
 
     @Test

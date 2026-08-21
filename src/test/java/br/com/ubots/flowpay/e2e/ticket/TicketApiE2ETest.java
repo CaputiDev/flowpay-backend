@@ -384,6 +384,23 @@ class TicketApiE2ETest {
                 .andExpect(jsonPath("$.totalTickets").value(2))
                 .andExpect(jsonPath("$.totalResolved").value(1))
                 .andExpect(jsonPath("$.totalInProgress").value(1));
+
+        mockMvc.perform(get("/v1/analytics/teams"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(3));
+
+        mockMvc.perform(get("/v1/analytics/teams/CREDIT_CARDS"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.team").value("CREDIT_CARDS"))
+                .andExpect(jsonPath("$.summary.totalTickets").value(1))
+                .andExpect(jsonPath("$.summary.inProgressTickets").value(1));
+
+        mockMvc.perform(get("/v1/analytics/teams/LOANS"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.team").value("LOANS"))
+                .andExpect(jsonPath("$.summary.totalTickets").value(1))
+                .andExpect(jsonPath("$.summary.resolvedTickets").value(1));
     }
 }
 

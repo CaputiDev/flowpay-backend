@@ -80,3 +80,16 @@ Accept: application/json
 ### 9. Analytics Overview Global (Esperado: HTTP 200 OK)
 GET http://localhost:8080/v1/analytics/overview
 Accept: application/json
+
+###
+
+### 10. Analytics de Todas as Equipes (Esperado: HTTP 200 OK)
+GET http://localhost:8080/v1/analytics/teams
+Accept: application/json
+
+###
+
+### 11. Analytics por Equipe Específica (Esperado: HTTP 200 OK)
+# Equipes válidas: CREDIT_CARDS, LOANS, OTHERS
+GET http://localhost:8080/v1/analytics/teams/CREDIT_CARDS
+Accept: application/json
