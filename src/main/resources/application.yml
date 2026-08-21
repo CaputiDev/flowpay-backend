@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: "America/Sao_Paulo"
   datasource:
     url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:flowpay_db}}
     username: ${DB_USER:${POSTGRES_USER:postgres}}
